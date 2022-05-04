@@ -1,0 +1,71 @@
+package es
+
+{package.Controller};
+
+import ${package.Entity}.${entity};
+import ${package.Service}.${table.serviceName} ;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springblade.core.tool.api.R;
+
+/**
+* $!{table.comment} 前端控制器
+* @author ${author}
+* @since ${date}
+*/
+@RestController
+@RequestMapping("/${table.entityPath}" )
+public class ${table.controllerName} {
+
+    @Autowired
+    private ${table.serviceName}  ${table.entityPath}Service;
+
+    /**
+    * 保存
+    *
+    * @param model
+    * @return
+    */
+    @RequestMapping("/save")
+    public R<Boolean> save(${entity} model) {
+        return R.status(${table.entityPath}Service.save(model)!=null);
+    }
+
+
+    /**
+    * 查询详情
+    *
+    * @param id
+    * @return
+    */
+    @RequestMapping("/findById")
+    public R<${entity}> findById(Long id) {
+        ${entity} model = ${table.entityPath}Service.findById(id).get();
+        return R.data(model);
+    }
+
+
+    /**
+    * 列表查询（非分页）
+    *
+    * @return
+    */
+    @RequestMapping("/findAll")
+    public R<Iterable<${entity}>> findAll() {
+        Iterable<${entity}> list =  ${table.entityPath}Service.findAll();
+        return R.data(list);
+    }
+
+    /**
+    * 列表查询（非分页）
+    *
+    * @return
+    */
+    @RequestMapping("/deleteAllById")
+    public R<Boolean> deleteAllById(Iterable<Long> ids) {
+        ${table.entityPath}Service.deleteAllById(ids);
+        return R.status(true);
+    }
+
+}

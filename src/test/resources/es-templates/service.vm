@@ -1,0 +1,46 @@
+package ${package.Service};
+
+#foreach($pkg in ${table.importPackages})
+import ${pkg};
+#end
+import ${package.Entity}.${entity};
+import java.util.List;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Iterator;
+import java.util.Optional;
+
+/**
+* $!{table.comment} 服务类
+*
+* @author ${author}
+* @since ${date}
+*/
+
+
+public interface ${table.serviceName}{
+    ${entity} save(${entity} entity);
+    Iterable<${entity}> saveAll(Iterable<${entity}> list);
+
+    Optional<${entity}> findById(Long id);
+    Iterable<${entity}> findAllById(Iterable<Long> ids);
+    Iterable<${entity}> findAll();
+    Iterable<${entity}> findAll(Pageable pageable);
+    Iterable<${entity}> searchSimilar(${entity} entity, String[] fields, Pageable pageable);
+
+    void delete(${entity} entity);
+    void deleteById(Long id);
+    void deleteAllById(Iterable<Long> ids);
+    void deleteAll();
+
+
+#foreach($field in ${table.fields})
+    #if(${field.propertyName})
+        #set($fieldName=$field.propertyName.substring(0, 1).toUpperCase() + $field.propertyName.substring(1))
+    #end
+    Page<${entity}> findBy${fieldName}(${field.propertyType} ${field.propertyName}, Pageable pageable);
+#end
+}
+
+

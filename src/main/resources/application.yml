@@ -1,0 +1,22 @@
+#spring:
+#  data:
+#    elasticsearch:
+#      cluster-name: es-cluster1
+#      cluster-nodes: 10.74.20.81:9300 # 程序连接es的端口号是9300
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  elasticsearch:
+    rest:
+      uris: http://10.74.20.81:9200
+      username: elastic
+      password: 123456
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.74.20.95:59301/bladex?useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowMultiQueries=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: dev
+    password: aXzBIGje
