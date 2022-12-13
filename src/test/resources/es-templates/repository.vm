@@ -4,7 +4,6 @@ package ${package.Mapper};
 import ${pkg};
 #end
 import ${package.Entity}.${entity};
-import com.mta.search.elasticsearch.test.entity.TestDoc;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Query;
@@ -13,7 +12,7 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 /**
 * @author ljp
 */
-public interface ${entity}Repository extends ElasticsearchRepository<${entity}, Long> {
+public interface ${entity}EsRepository extends ElasticsearchRepository<${entity}, Long> {
 
 #foreach($field in ${table.fields})
     #if(${field.propertyName})

@@ -22,29 +22,28 @@ class EsCodeGenerator {
         // 全局配置
         // 自定义文件命名，注意 %s 会自动填充表实体属性
         GlobalConfig gc = getGlobalConfig();
-        gc.setMapperName("%sRepository");
-        gc.setXmlName("%sRepository");
-        gc.setServiceName("I%sService");
-        gc.setServiceImplName("%sServiceImpl");
-        gc.setControllerName("%sController");
+        gc.setMapperName("%sEsRepository");
+        gc.setXmlName("%sEsRepository");
+        gc.setServiceName("I%sEsService");
+        gc.setServiceImplName("%sEsServiceImpl");
+        gc.setControllerName("%sEsController");
 
         // 数据源配置
         DataSourceConfig dsc = getDataSourceConfig("my_website");
 
         // 包配置
         PackageConfig pc = getPackageConfig();
-        pc.setParent("com.shxex.bwts.dome");
 
         // 自定义模板
         TemplateConfig template = getTemplateConfig();
 
-
         // 策略配置
-        StrategyConfig strategy = getStrategyConfig(new String[]{"表名"});
+        StrategyConfig strategy = getStrategyConfig(new String[]{"search"});
 
         // 设置整合
         AutoGenerator mpg = new AutoGenerator();
-        mpg.setTemplateEngine(new VelocityTemplateEngine());  // 使用Veloctiy模板
+        // 使用Veloctiy模板
+        mpg.setTemplateEngine(new VelocityTemplateEngine());
         mpg.setPackageInfo(pc);
         mpg.setStrategy(strategy);
         mpg.setDataSource(dsc);
@@ -57,24 +56,24 @@ class EsCodeGenerator {
 
     private static TemplateConfig getTemplateConfig() {
         TemplateConfig template = new TemplateConfig();
-        template.setController("src/test/es-templates/controller.vm");
-        template.setService("src/test/es-templates/service.vm");
-        template.setServiceImpl("src/test/es-templates/serviceImpl.vm");
-        template.setMapper("src/test/es-templates/repository.vm");
-        template.setEntity("src/test/es-templates/entity.vm");
+        template.setController("/es-templates/controller.vm");
+        template.setService("/es-templates/service.vm");
+        template.setServiceImpl("/es-templates/serviceImpl.vm");
+        template.setMapper("/es-templates/repository.vm");
+        template.setEntity("/es-templates/entity.vm");
         template.setXml(null);
         return template;
     }
 
     private static PackageConfig getPackageConfig() {
         PackageConfig pc = new PackageConfig();
-        pc.setParent("com.mta.search.elasticsearch.common");
-        pc.setMapper("repository");
-        pc.setXml("repository.xml");
-        pc.setEntity("entity");
-        pc.setController("controller");
-        pc.setService("service");
-        pc.setServiceImpl("service.impl");
+        pc.setParent("com.shxex.bwts.dome");
+        pc.setMapper("esRepository");
+        pc.setXml(null);
+        pc.setEntity("esEntity");
+        pc.setController("esController");
+        pc.setService("esService");
+        pc.setServiceImpl("esService.impl");
         return pc;
     }
 
