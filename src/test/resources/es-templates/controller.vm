@@ -1,0 +1,80 @@
+package ${package.Controller};
+
+import ${package.Entity}.${entity};
+import ${package.Service}.${table.serviceName} ;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Pageable;
+
+/**
+* $!{table.comment} 前端控制器
+* @author ${author}
+* @since ${date}
+*/
+@RestController
+@RequestMapping("/${table.entityPath}" )
+public class ${table.controllerName} {
+
+    @Autowired
+    private ${table.serviceName}  ${table.entityPath}Service;
+
+    /**
+    * 保存
+    *
+    * @param model
+    * @return
+    */
+    @PostMapping("/save")
+    public Boolean save(${entity} model) {
+        return ${table.entityPath}Service.save(model)!=null;
+    }
+
+
+    /**
+    * 查询详情
+    *
+    * @param id
+    * @return
+    */
+    @GetMapping("/findById")
+    public ${entity} findById(Long id) {
+        ${entity} model = ${table.entityPath}Service.findById(id).get();
+        return model;
+    }
+
+    /**
+    * 列表查询（非分页）
+    *
+    * @return
+    */
+    @GetMapping("/findAll")
+        public Iterable<${entity}> findAll() {
+        Iterable<${entity}> list =  ${table.entityPath}Service.findAll();
+        return list;
+    }
+
+
+    /**
+    * 搜索
+    *
+    * @return
+    */
+    @PostMapping("/searchSimilar")
+    public Iterable<${entity}> searchSimilar(@RequestBody ${entity} entity,@RequestBody String[] fields,@RequestBody Pageable pageable) {
+        Iterable<${entity}> list =  ${table.entityPath}Service.searchSimilar(entity, fields, pageable);
+        return list;
+    }
+
+    /**
+    * 根据id批量删除
+    *
+    * @return
+    */
+    @PostMapping("/deleteAllById")
+    public Boolean deleteAllById(Iterable<Long> ids) {
+        ${table.entityPath}Service.deleteAllById(ids);
+        return true;
+    }
+
+}

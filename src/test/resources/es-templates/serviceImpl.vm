@@ -1,0 +1,94 @@
+package ${package.ServiceImpl};
+
+#foreach($pkg in ${table.importPackages})
+import ${pkg};
+#end
+import ${package.Entity}.${entity};
+import ${package.Mapper}.${table.mapperName};
+import ${package.Service}.${table.serviceName};
+import ${superServiceImplClassPackage};
+import org.springframework.stereotype.Service;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+import lombok.*;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import java.util.Optional;
+import org.springframework.data.domain.*;
+
+import java.util.List;
+
+/**
+* $!{table.comment} 服务实现类
+*
+* @author ${author}
+* @since ${date}
+*/
+
+@Service
+@AllArgsConstructor
+public class ${table.serviceImplName} implements ${table.serviceName} {
+    private final ElasticsearchRestTemplate elasticsearchTemplate;
+    private final ${entity}Repository repository;
+
+    @Override
+    public ${entity} save(${entity} entity){
+        return repository.save(entity);
+    };
+    @Override
+    public Iterable<${entity}> saveAll(Iterable<${entity}> list){
+        return repository.saveAll(list);
+    };
+
+    @Override
+    public Optional<${entity}> findById(Long id){
+        return repository.findById(id);
+    };
+    @Override
+    public Iterable<${entity}> findAllById(Iterable<Long> ids){
+        return repository.findAllById(ids);
+    };
+    @Override
+    public Iterable<${entity}> findAll(){
+        return repository.findAll();
+    };
+    @Override
+    public Iterable<${entity}> findAll(Pageable pageable){
+        return repository.findAll(pageable);
+    };
+    @Override
+    public Iterable<${entity}> searchSimilar(${entity} entity, String[] fields, Pageable pageable){
+        return repository.searchSimilar(entity,fields,pageable);
+    };
+
+
+    @Override
+    public void delete(${entity} entity){
+        repository.delete(entity);
+    };
+    @Override
+    public void deleteById(Long id){
+        repository.deleteById(id);
+    };
+    @Override
+    public void deleteAllById(Iterable<Long> ids){
+        repository.deleteAllById(ids);
+    };
+    @Override
+    public void deleteAll(){
+        repository.deleteAll();
+    };
+
+#foreach($field in ${table.fields})
+    #if(${field.propertyName})
+        #set($fieldName=$field.propertyName.substring(0, 1).toUpperCase() + $field.propertyName.substring(1))
+    #end
+    @Override
+    public Page<${entity}> findBy${fieldName}(${field.propertyType} ${field.propertyName}, Pageable pageable){
+        return repository.findBy${fieldName}(${field.propertyName},pageable);
+    }
+#end
+
+}
+
+
