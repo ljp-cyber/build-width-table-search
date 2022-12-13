@@ -36,8 +36,7 @@ import org.springframework.data.elasticsearch.annotations.*;
 #end
 #if(${table.convert})
 @TableName("${table.name}")
-@Document(indexName = "medi")
-//@Document(indexName = "${table.name}")
+@Document(indexName = "${table.name}")
 #end
 #if(${swagger2})
 @ApiModel(value="${entity}对象", description="$!{table.comment}")

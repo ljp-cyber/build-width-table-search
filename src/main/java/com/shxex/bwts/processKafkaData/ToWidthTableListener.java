@@ -1,16 +1,26 @@
 package com.shxex.bwts.processKafkaData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shxex.bwts.common.TableNameBeanContent;
+import com.shxex.bwts.common.joinUpdate.JoinUpdate;
 import com.shxex.bwts.common.utils.JackJsonUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
+
+import java.util.Map;
 
 /**
  * @author ljp
  */
 @Slf4j
 public class ToWidthTableListener {
+
+    @Autowired
+    private JoinUpdate joinUpdate;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @KafkaListener(topics = "bwts-to-width-table")
     public void listen(byte[] src, Acknowledgment ack) {
@@ -25,10 +35,13 @@ public class ToWidthTableListener {
         }
 
         try {
-            ack.acknowledge();
+            joinUpdate.update(maxwell.getTable(),
+                    objectMapper.convertValue(maxwell.getData(), Map.class),
+                    objectMapper.convertValue(maxwell.getOld(), Map.class));
         } catch (Exception exception) {
             log.error(exception.getMessage(), exception);
         }
+        ack.acknowledge();
 
     }
 

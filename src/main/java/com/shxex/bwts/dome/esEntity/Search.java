@@ -1,32 +1,32 @@
 package com.shxex.bwts.dome.esEntity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
-import java.io.Serializable;
-import io.swagger.annotations.*;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.baomidou.mybatisplus.annotation.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import java.io.Serializable;
 
 /**
-* 
-* @author ljp
-* @since 2022-12-13
-@
-*/
+ * @author ljp
+ * @
+ * @since 2022-12-13
+ */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @TableName("search")
-@Document(indexName = "medi")
-//@Document(indexName = "search")
-@ApiModel(value="Search对象", description="")
+@Document(indexName = "search")
+@ApiModel(value = "Search对象", description = "Search对象")
 public class Search implements Serializable {
 
-private static final long serialVersionUID=1L;
+    private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @Id
