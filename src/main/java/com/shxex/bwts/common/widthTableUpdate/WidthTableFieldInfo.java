@@ -1,4 +1,4 @@
-package com.shxex.bwts.common.joinUpdate;
+package com.shxex.bwts.common.widthTableUpdate;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -7,84 +7,63 @@ import lombok.Data;
  * 平面结构描述宽表字段间的联系
  */
 @Data
-public class JoinFieldInfo {
+public class WidthTableFieldInfo {
 
     /**
      * 事实表或维度表 表名称
      */
     @ApiModelProperty("事实表或维度表 表名称")
-    private String tableName;
+    private String sourceTableName;
     /**
      * 事实表或维度表 表字段名称
      */
     @ApiModelProperty("事实表或维度表 表字段名称")
-    private String columnName;
-    /**
-     * 事实表或维度表 表字段数据类型
-     */
-    @ApiModelProperty("事实表或维度表 表字段数据类型")
-    private String jdbcType;
+    private String sourceTableColumnName;
 
     /**
      * 事实表或维度表 实体字段名称
      */
     @ApiModelProperty("事实表或维度表 实体字段名称")
-    private String fieldName;
-    /**
-     * 事实表或维度表 实体字段数据类型
-     */
-    @ApiModelProperty("事实表或维度表 实体字段数据类型")
-    private String javaType;
+    private String sourceEntityFieldName;
 
     /**
      * 宽表 表名称
      */
     @ApiModelProperty("宽表 表名称")
-    private String joinTableName;
+    private String widthTableName;
     /**
      * 宽表 表字段名称
      */
     @ApiModelProperty("宽表 表字段名称")
-    private String joinColumnName;
-    /**
-     * 宽表 表字段数据类型
-     */
-    @ApiModelProperty("宽表 表字段数据类型")
-    private String joinJdbcType;
+    private String widthColumnName;
 
     /**
      * 宽表 实体字段名称
      */
     @ApiModelProperty("宽表 实体字段名称")
-    private String joinFieldName;
-
-    /**
-     * 宽表 实体字段数据类型
-     */
-    @ApiModelProperty("宽表 实体字段数据类型")
-    private String joinJavaType;
+    private String widthEntityFieldName;
 
     /**
      * 关联事实表或维度表 表名称
      */
     @ApiModelProperty("关联事实表或维度表 表名称")
-    private String foreignKeyTable;
+    private String foreignKeySourceTable;
 
     /**
      * 关联事实表或维度表 字段名称名称
      */
     @ApiModelProperty("关联事实表或维度表 表字段名称")
-    private String foreignKeyColumn;
+    private String foreignKeySourceColumn;
 
     /**
      * 关联宽表 表字段名称
      */
     @ApiModelProperty("关联宽表 表字段名称")
-    private String foreignKeyJoinColumn;
+    private String foreignKeyWidthTableColumn;
 
     /**
      * 关联宽表 表字段名称
      */
     @ApiModelProperty("关联宽表 实体字段名称")
-    private String foreignKeyJoinField;
+    private String foreignKeyWidthEntityField;
 }

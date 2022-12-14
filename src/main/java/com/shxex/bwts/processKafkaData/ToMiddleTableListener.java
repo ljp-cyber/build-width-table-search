@@ -1,10 +1,8 @@
 package com.shxex.bwts.processKafkaData;
 
-import com.shxex.bwts.common.TableNameBeanContent;
-import com.shxex.bwts.common.utils.JackJsonUtil;
+import com.shxex.bwts.common.middleTableUpdate.MiddleTableUpdate;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author ljp
@@ -12,24 +10,11 @@ import org.springframework.kafka.support.Acknowledgment;
 @Slf4j
 public class ToMiddleTableListener {
 
-    @KafkaListener(topics = "bwts-to-middle-table")
-    public void listen(byte[] src, Acknowledgment ack) {
-        Maxwell maxwell = JackJsonUtil.parse(src, Maxwell.class);
-        log.debug("开始处理到中间表的数据" + maxwell);
+    @Autowired
+    private MiddleTableUpdate middleTableUpdate;
 
-        //过滤不需要的消费
-        if (TableNameBeanContent.getEntityClass(maxwell.getTable()) == null) {
-            log.info(maxwell.getDatabase() + ":" + maxwell.getTable() + ":不在消费范围内");
-            ack.acknowledge();
-            return;
-        }
-
-        try {
-            ack.acknowledge();
-        } catch (Exception exception) {
-            log.debug(exception.getMessage(), exception);
-        }
-
+    public void handlerDataChange(Maxwell maxwell) {
+        middleTableUpdate.update(maxwell);
     }
 
 }

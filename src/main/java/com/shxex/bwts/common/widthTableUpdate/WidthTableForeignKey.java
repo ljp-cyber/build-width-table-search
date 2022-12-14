@@ -1,4 +1,4 @@
-package com.shxex.bwts.common.joinUpdate;
+package com.shxex.bwts.common.widthTableUpdate;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JoinForeignKey {
+public @interface WidthTableForeignKey {
 
 	/**
 	 * 被注解的字段关联了父亲的某个字段或者儿子的某个字段

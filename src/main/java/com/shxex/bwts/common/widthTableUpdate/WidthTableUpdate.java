@@ -1,4 +1,4 @@
-package com.shxex.bwts.common.joinUpdate;
+package com.shxex.bwts.common.widthTableUpdate;
 
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
@@ -15,39 +15,39 @@ import java.util.Map;
  * 更新处理期，这里的代码比较硬核
  */
 @SuppressWarnings("rawtypes")
-public class JoinUpdate {
+public class WidthTableUpdate {
 
     private Map<String, IService> tableServiceMap;
-    private JoinEntityTreeContent joinEntityTreeContent;
+    private WidthTableEntityTreeContent widthTableEntityTreeContent;
 
-    public JoinUpdate(Map<String, IService> tableServiceMap, JoinEntityTreeContent joinEntityTreeContent) {
-        this.joinEntityTreeContent = joinEntityTreeContent;
+    public WidthTableUpdate(Map<String, IService> tableServiceMap, WidthTableEntityTreeContent widthTableEntityTreeContent) {
+        this.widthTableEntityTreeContent = widthTableEntityTreeContent;
         this.tableServiceMap = tableServiceMap;
     }
 
     public void update(String tableName, Map oldDataMap, Map newDataMap) {
-        List<JoinEntityTree> list = joinEntityTreeContent.listByTableName(tableName);
+        List<WidthTableEntityTree> list = widthTableEntityTreeContent.listByTableName(tableName);
         //遍历所有影响到的关联实体
-        for (JoinEntityTree joinEntityTree : list) {
+        for (WidthTableEntityTree widthTableEntityTree : list) {
             try {
-                updateOne(joinEntityTree, oldDataMap, newDataMap);
+                updateOne(widthTableEntityTree, oldDataMap, newDataMap);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
         }
     }
 
-    private void updateOne(JoinEntityTree joinEntityTree, Map oldDataMap, Map newDataMap) {
-        IService service = tableServiceMap.get(joinEntityTree.getJoinTableName());
+    private void updateOne(WidthTableEntityTree widthTableEntityTree, Map oldDataMap, Map newDataMap) {
+        IService service = tableServiceMap.get(widthTableEntityTree.getWidthTableName());
         UpdateChainWrapper updateChainWrapper = service.update();
         QueryChainWrapper queryChainWrapper = service.query();
         //如果更新的是根节点
-        if (joinEntityTree.getParent() == null) {
+        if (widthTableEntityTree.getParent() == null) {
             Object bean = new HashMap<>();
             if (ObjectUtils.isEmpty(oldDataMap)) {
                 Map<String, Object> insert = new HashMap<>();
-                for (JoinFieldInfo joinFieldInfo : joinEntityTree.getFiledList()) {
-                    insert.put(joinFieldInfo.getJoinFieldName(), newDataMap.get(joinFieldInfo.getFieldName()));
+                for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
+                    insert.put(widthTableFieldInfo.getWidthEntityFieldName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
                 }
                 try {
                     bean = service.getEntityClass().newInstance();
@@ -57,9 +57,9 @@ public class JoinUpdate {
                 }
                 service.save(bean);
             } else {
-                for (JoinFieldInfo joinFieldInfo : joinEntityTree.getFiledList()) {
-                    if ("id".equals(joinFieldInfo.getColumnName())) {
-                        queryChainWrapper.eq(joinFieldInfo.getJoinColumnName(), oldDataMap.get("id"));
+                for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
+                    if ("id".equals(widthTableFieldInfo.getSourceTableColumnName())) {
+                        queryChainWrapper.eq(widthTableFieldInfo.getWidthColumnName(), oldDataMap.get("id"));
                         bean = queryChainWrapper.one();
                         break;
                     }
@@ -67,26 +67,26 @@ public class JoinUpdate {
             }
             Map oldData = new BeanMap(bean);
             updateChainWrapper.eq("id", oldData.get("id"));
-            recuseUpdate(updateChainWrapper, joinEntityTree, oldData, newDataMap);
+            recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
         } else {
             //处理外键关联父亲的情况
-            List<JoinFieldInfo> parentFiledList = joinEntityTree.getParent().getFiledList();
-            List<JoinFieldInfo> filedList = joinEntityTree.getFiledList();
+            List<WidthTableFieldInfo> parentFiledList = widthTableEntityTree.getParent().getWidthTableFiledList();
+            List<WidthTableFieldInfo> filedList = widthTableEntityTree.getWidthTableFiledList();
             a:
-            for (JoinFieldInfo joinFieldInfo : filedList) {
-                for (JoinFieldInfo parentField : parentFiledList) {
-                    if (!isJoin(joinFieldInfo, parentField)) {
+            for (WidthTableFieldInfo widthTableFieldInfo : filedList) {
+                for (WidthTableFieldInfo parentField : parentFiledList) {
+                    if (!isJoin(widthTableFieldInfo, parentField)) {
                         continue;
                     }
                     if (oldDataMap == null) {
-                        updateChainWrapper.eq(parentField.getJoinColumnName(), newDataMap.get(joinFieldInfo.getFieldName()));
-                        queryChainWrapper.eq(parentField.getJoinColumnName(), newDataMap.get(joinFieldInfo.getFieldName()));
+                        updateChainWrapper.eq(parentField.getWidthColumnName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
+                        queryChainWrapper.eq(parentField.getWidthColumnName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
                     } else {
-                        updateChainWrapper.eq(parentField.getJoinColumnName(), oldDataMap.get(joinFieldInfo.getFieldName()));
-                        queryChainWrapper.eq(parentField.getJoinColumnName(), oldDataMap.get(joinFieldInfo.getFieldName()));
+                        updateChainWrapper.eq(parentField.getWidthColumnName(), oldDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
+                        queryChainWrapper.eq(parentField.getWidthColumnName(), oldDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
                     }
                     Object bean = queryChainWrapper.one();
-                    recuseUpdate(updateChainWrapper, joinEntityTree, new BeanMap(bean), newDataMap);
+                    recuseUpdate(updateChainWrapper, widthTableEntityTree, new BeanMap(bean), newDataMap);
                     break a;
                 }
             }
@@ -94,15 +94,15 @@ public class JoinUpdate {
         updateChainWrapper.update();
     }
 
-    private boolean isJoin(JoinFieldInfo joinFieldInfo, JoinFieldInfo parentField) {
-        if (isJoinParent(joinFieldInfo, parentField)) return true;
-        if (isJoinParent(parentField, joinFieldInfo)) return true;
+    private boolean isJoin(WidthTableFieldInfo widthTableFieldInfo, WidthTableFieldInfo parentField) {
+        if (isJoinParent(widthTableFieldInfo, parentField)) return true;
+        if (isJoinParent(parentField, widthTableFieldInfo)) return true;
         return false;
     }
 
-    private boolean isJoinParent(JoinFieldInfo joinFieldInfo, JoinFieldInfo parentField) {
-        if (parentField.getTableName().equals(joinFieldInfo.getForeignKeyTable())) {
-            if (parentField.getColumnName().equals(joinFieldInfo.getForeignKeyColumn())) {
+    private boolean isJoinParent(WidthTableFieldInfo widthTableFieldInfo, WidthTableFieldInfo parentField) {
+        if (parentField.getSourceTableName().equals(widthTableFieldInfo.getForeignKeySourceTable())) {
+            if (parentField.getSourceTableColumnName().equals(widthTableFieldInfo.getForeignKeySourceColumn())) {
                 return true;
             }
         }
@@ -118,13 +118,13 @@ public class JoinUpdate {
      * @param oldData       旧数据，这个旧数据可以是聚合表的所有信息
      * @param newData       父亲新数据
      */
-    private void recuseUpdate(UpdateChainWrapper updateWrapper, JoinEntityTree parent, Map oldData, Map newData) {
-        List<JoinFieldInfo> filedList = parent.getFiledList();
-        List<JoinEntityTree> children = parent.getChildrenList();
+    private void recuseUpdate(UpdateChainWrapper updateWrapper, WidthTableEntityTree parent, Map oldData, Map newData) {
+        List<WidthTableFieldInfo> filedList = parent.getWidthTableFiledList();
+        List<WidthTableEntityTree> children = parent.getChildrenList();
         //遍历所有父亲字段
-        for (JoinFieldInfo joinFieldInfo : filedList) {
-            Object oldColumn = oldData.get(joinFieldInfo.getJoinFieldName());
-            Object newColumn = newData.get(joinFieldInfo.getFieldName());
+        for (WidthTableFieldInfo widthTableFieldInfo : filedList) {
+            Object oldColumn = oldData.get(widthTableFieldInfo.getWidthEntityFieldName());
+            Object newColumn = newData.get(widthTableFieldInfo.getSourceEntityFieldName());
             if (oldColumn == null && newColumn == null) {
                 //新旧同时为空不用处理
                 continue;
@@ -133,22 +133,22 @@ public class JoinUpdate {
                 continue;
             } else {
                 //新旧数据不同，需要更新
-                updateWrapper.set(joinFieldInfo.getJoinColumnName(), newColumn);
+                updateWrapper.set(widthTableFieldInfo.getWidthColumnName(), newColumn);
             }
             //如果关联儿子则需要递归更新，处理有外键的情况，递归处理儿子字段
-            for (JoinEntityTree child : children) {
+            for (WidthTableEntityTree child : children) {
                 //儿子部分关联表的服务
-                IService childService = tableServiceMap.get(child.getTableName());
+                IService childService = tableServiceMap.get(child.getSourceTableName());
                 QueryChainWrapper queryChainWrapper = childService.query();
 
-                List<JoinFieldInfo> childFiledList = child.getFiledList();
-                for (JoinFieldInfo childJoinFieldInfo : childFiledList) {
-                    if (isJoinParent(joinFieldInfo, childJoinFieldInfo) && newColumn != null) {
+                List<WidthTableFieldInfo> childFiledList = child.getWidthTableFiledList();
+                for (WidthTableFieldInfo childWidthTableFieldInfo : childFiledList) {
+                    if (isJoinParent(widthTableFieldInfo, childWidthTableFieldInfo) && newColumn != null) {
                         //1、如果外键关联儿子，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
-                        queryChainWrapper.eq(joinFieldInfo.getForeignKeyColumn(), newColumn);
-                    } else if (isJoinParent(childJoinFieldInfo, joinFieldInfo) && newColumn != null) {
+                        queryChainWrapper.eq(widthTableFieldInfo.getForeignKeySourceColumn(), newColumn);
+                    } else if (isJoinParent(childWidthTableFieldInfo, widthTableFieldInfo) && newColumn != null) {
                         //2、如果儿子外键关联父亲字段，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
-                        queryChainWrapper.eq(childJoinFieldInfo.getColumnName(), newColumn);
+                        queryChainWrapper.eq(childWidthTableFieldInfo.getSourceTableColumnName(), newColumn);
                     } else {
                         //其余情况不用处理儿子
                         continue;
