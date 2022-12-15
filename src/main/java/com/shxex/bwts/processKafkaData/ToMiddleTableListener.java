@@ -18,6 +18,7 @@ public class ToMiddleTableListener {
     private MiddleTableUpdate middleTableUpdate;
 
     public void handlerDataChange(Maxwell maxwell) {
+        log.debug("开始处理到中间表的数据" + maxwell);
         middleTableUpdate.update(maxwell);
     }
 

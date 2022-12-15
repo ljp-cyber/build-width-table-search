@@ -1,16 +1,9 @@
 package com.shxex.bwts.dome.esService;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableField;
-import java.io.Serializable;
-import com.shxex.bwts.dome.esEntity.Search;
-import java.util.List;
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.shxex.bwts.dome.entity.Search;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.Iterator;
+
 import java.util.Optional;
 
 /**

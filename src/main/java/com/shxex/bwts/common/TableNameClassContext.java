@@ -15,22 +15,33 @@ import java.util.Set;
 public class TableNameClassContext {
 
     private Map<String, Class<?>> tableEntityClassMap;
+    private Map<String, Class<?>> buildWidthTableEntityClassMap;
     private Map<String, Class<?>> tableServiceClassMap;
     private Map<String, Class<?>> tableRepositoryClassMap;
 
     private String[] entityPackages;
     private String[] servicePackages;
     private String[] repositoryPackages;
+    private String[] buildWidthEntityPackages;
 
-    public TableNameClassContext(String[] entityPackages, String[] servicePackages, String[] repositoryPackages) {
+    public TableNameClassContext(String[] buildWidthEntityPackages,String[] entityPackages, String[] servicePackages, String[] repositoryPackages) {
         this.entityPackages = entityPackages;
         this.servicePackages = servicePackages;
         this.repositoryPackages = repositoryPackages;
+        this.buildWidthEntityPackages = buildWidthEntityPackages;
         this.init();
+    }
+
+    public Set<String> buildWidthTableNameSet() {
+        return buildWidthTableEntityClassMap.keySet();
     }
 
     public Set<String> tableNameSet() {
         return tableEntityClassMap.keySet();
+    }
+
+    public Class<?> getBuildWidthTableEntityClass(String tableName) {
+        return buildWidthTableEntityClassMap.get(tableName);
     }
 
     public Class<?> getEntityClass(String tableName) {
@@ -53,8 +64,20 @@ public class TableNameClassContext {
 
     private void init() {
         getTableEntityClassMap();
+        getBuildWidthTableEntityClassMap();
         getTableRepositoryClassMap();
         getTableServiceClassMap();
+    }
+
+    private Map<String, Class<?>> getBuildWidthTableEntityClassMap() {
+        if (buildWidthTableEntityClassMap == null) {
+            synchronized (TableNameClassContext.class) {
+                if (buildWidthTableEntityClassMap == null) {
+                    buildWidthTableEntityClassMap = ScanUtil.ScanEntity(buildWidthEntityPackages);
+                }
+            }
+        }
+        return buildWidthTableEntityClassMap;
     }
 
     private Map<String, Class<?>> getTableEntityClassMap() {
@@ -62,7 +85,6 @@ public class TableNameClassContext {
             synchronized (TableNameClassContext.class) {
                 if (tableEntityClassMap == null) {
                     tableEntityClassMap = ScanUtil.ScanEntity(entityPackages);
-
                 }
             }
         }

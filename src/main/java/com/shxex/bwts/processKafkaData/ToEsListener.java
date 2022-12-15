@@ -3,11 +3,15 @@ package com.shxex.bwts.processKafkaData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.shxex.bwts.common.TableNameClassContext;
+import com.shxex.bwts.common.utils.NameUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -28,6 +32,8 @@ public class ToEsListener {
     private TableNameClassContext tableNameClassContext;
 
     public void handlerDateChange(Maxwell maxwell) {
+        log.debug("开始处理到es的数据" + maxwell);
+
         Class<?> entityClass = tableNameClassContext.getEntityClass(maxwell.getTable());
 
         //提取新旧数据
@@ -37,23 +43,37 @@ public class ToEsListener {
         //获取改表的处理仓库类
         Class<?> repositoryClazz = tableNameClassContext.getRepositoryClass(maxwell.getTable());
         log.debug("处理仓库为：" + repositoryClazz);
-
+        if (repositoryClazz == null) {
+            return;
+        }
         //处理增删改查
         ElasticsearchRepository repository = (ElasticsearchRepository) applicationContext.getBean(repositoryClazz);
         switch (maxwell.getType()) {
             case Maxwell.INSERT:
-                repository.save(objectMapper.convertValue(newJson, entityClass));
+                repository.save(getEntity(entityClass, newJson));
                 break;
             case Maxwell.DELETE:
                 repository.deleteById(newJson.get("id"));
                 break;
             case Maxwell.UPDATE:
-                if (new Integer(1).equals(oldJson.get("is_deleted").asInt(0))) {
-                    repository.deleteById(newJson.get("id"));
-                } else {
-                    repository.save(objectMapper.convertValue(newJson, entityClass));
-                }
+                repository.save(getEntity(entityClass, newJson));
                 break;
         }
+        Iterable all = repository.findAll();
+        for (Object o : all) {
+            System.out.println(o);
+        }
+    }
+
+    private Object getEntity(Class<?> entityClass, ObjectNode newJson) {
+        List<String> fields = new ArrayList<>();
+        newJson.fieldNames().forEachRemaining(key -> {
+            fields.add(key);
+        });
+        for (String field : fields) {
+            newJson.set(NameUtil.camelName(field), newJson.get(field));
+        }
+        Object value = objectMapper.convertValue(newJson, entityClass);
+        return value;
     }
 }

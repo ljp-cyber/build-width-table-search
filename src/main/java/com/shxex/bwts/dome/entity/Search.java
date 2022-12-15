@@ -1,36 +1,53 @@
 package com.shxex.bwts.dome.entity;
 
-import java.io.Serializable;
-
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import java.io.Serializable;
 
 /**
- * <p>
- * 
- * </p>
- *
  * @author ljp
+ * @
  * @since 2022-12-13
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ApiModel(value="Search对象", description="")
 @TableName("search")
+@Document(indexName = "search")
+@ApiModel(value = "Search对象", description = "Search对象")
 public class Search implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    @Id
+    private String id;
+
+    @TableField("user_id")
+    @Field(type = FieldType.Text)
     private Long userId;
 
+    @TableField("user_name")
+    @Field(type = FieldType.Text)
     private String userName;
 
+    @TableField("hobby_id")
+    @Field(type = FieldType.Text)
     private Long hobbyId;
 
+    @TableField("hobby_name")
+    @Field(type = FieldType.Text)
     private String hobbyName;
 
 
 }
+

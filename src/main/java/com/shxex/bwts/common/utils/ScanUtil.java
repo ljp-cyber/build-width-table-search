@@ -76,15 +76,22 @@ public class ScanUtil {
             if (!ElasticsearchRepository.class.isAssignableFrom(clazz)) {
                 return;
             }
-            Type superclass = clazz.getGenericSuperclass();
-            if (!(superclass instanceof ParameterizedType)) {
-                return;
+            Type[] genericInterfaces = clazz.getGenericInterfaces();
+            for (Type genericInterface : genericInterfaces) {
+                String typeName = genericInterface.getTypeName();
+                String name = ElasticsearchRepository.class.getTypeName();
+                if (!typeName.contains(name)) {
+                    continue;
+                }
+                if (!(genericInterface instanceof ParameterizedType)) {
+                    continue;
+                }
+                ParameterizedType parameterizedType = (ParameterizedType) genericInterface;
+                Type actType = parameterizedType.getActualTypeArguments()[0];
+                TableName tableName = getTableName(actType);
+                if (tableName == null) return;
+                res.put(tableName.value(), clazz);
             }
-            ParameterizedType parameterizedType = (ParameterizedType) superclass;
-            Type actType = parameterizedType.getActualTypeArguments()[0];
-            TableName tableName = getTableName(actType);
-            if (tableName == null) return;
-            res.put(tableName.value(), clazz);
         });
         scanPackage.scan();
         return res;

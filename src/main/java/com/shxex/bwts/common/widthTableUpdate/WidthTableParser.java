@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WidthTableEntityTreeParser {
+public class WidthTableParser {
 
     public static WidthTableEntityTree recuseParse(Class<?> widthTableEntityClass, WidthTableEntityTree parent) {
 
@@ -74,6 +74,9 @@ public class WidthTableEntityTreeParser {
 
         for (Field field : fields) {
             WidthTableFieldInfo widthTableFieldInfo = fieldMap.get(field.getName());
+            if (widthTableFieldInfo == null) {
+                continue;
+            }
             WidthTableForeignKey widthTableForeignKey = field.getAnnotation(WidthTableForeignKey.class);
             if (widthTableForeignKey == null) {
                 continue;

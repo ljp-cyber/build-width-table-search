@@ -20,11 +20,14 @@ import java.util.Map;
 @AllArgsConstructor
 public class WidthTableUpdate {
 
-    private WidthTableEntityTreeContent widthTableEntityTreeContent;
+    private WidthTableContext widthTableContext;
     private TableNameClassContext tableNameClassContext;
 
     public void update(String tableName, Map oldDataMap, Map newDataMap) {
-        List<WidthTableEntityTree> list = widthTableEntityTreeContent.listByTableName(tableName);
+        List<WidthTableEntityTree> list = widthTableContext.listByTableName(tableName);
+        if (list == null) {
+            return;
+        }
         //遍历所有影响到的关联实体
         for (WidthTableEntityTree widthTableEntityTree : list) {
             try {
@@ -84,7 +87,8 @@ public class WidthTableUpdate {
                         queryChainWrapper.eq(parentField.getWidthColumnName(), oldDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
                     }
                     Object bean = queryChainWrapper.one();
-                    recuseUpdate(updateChainWrapper, widthTableEntityTree, new BeanMap(bean), newDataMap);
+                    BeanMap oldData = new BeanMap(bean);
+                    recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
                     break a;
                 }
             }

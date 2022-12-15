@@ -21,6 +21,7 @@ public class ToWidthTableListener {
     private ObjectMapper objectMapper;
 
     public void handlerDataChange(Maxwell maxwell) {
+        log.debug("开始处理到宽表的数据" + maxwell);
         widthTableUpdate.update(maxwell.getTable(),
                 objectMapper.convertValue(maxwell.getData(), Map.class),
                 objectMapper.convertValue(maxwell.getOld(), Map.class));

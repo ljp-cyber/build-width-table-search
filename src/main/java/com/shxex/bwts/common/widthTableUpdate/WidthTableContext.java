@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.util.*;
 
 @Getter
-public class WidthTableEntityTreeContent {
+public class WidthTableContext {
 
     private List<WidthTableEntityTree> rootWidthTableEntityTreeList = new ArrayList<>();
 
@@ -16,7 +16,7 @@ public class WidthTableEntityTreeContent {
     }
 
     public void parseJoinEntity(Class<?> aClass) {
-        WidthTableEntityTree widthTableEntityTree = WidthTableEntityTreeParser.recuseParse(aClass, null);
+        WidthTableEntityTree widthTableEntityTree = WidthTableParser.recuseParse(aClass, null);
         if (widthTableEntityTree == null) {
             return;
         }

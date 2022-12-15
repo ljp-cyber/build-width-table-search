@@ -23,7 +23,6 @@ public class DataChangeListener {
     @KafkaListener(topics = "bwts")
     public void listen(byte[] src) {
         Maxwell maxwell = JackJsonUtil.parse(src, Maxwell.class);
-        log.debug("开始处理到es的数据" + maxwell);
 
         //过滤不需要的消费
         if (tableNameClassContext.getEntityClass(maxwell.getTable()) == null) {
@@ -33,9 +32,9 @@ public class DataChangeListener {
         }
 
         try {
-            toEsListener.handlerDateChange(maxwell);
             toMiddleTableListener.handlerDataChange(maxwell);
             toWidthTableListener.handlerDataChange(maxwell);
+            toEsListener.handlerDateChange(maxwell);
         } catch (Exception exception) {
             log.error(exception.getMessage(), exception);
         }

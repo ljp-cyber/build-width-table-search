@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
-import com.shxex.bwts.dome.esEntity.Search;
+
+import com.shxex.bwts.dome.entity.Search;
 import com.shxex.bwts.dome.esRepository.SearchEsRepository;
 import com.shxex.bwts.dome.esService.ISearchEsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

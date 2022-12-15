@@ -1,11 +1,10 @@
 package com.shxex.bwts.dome.esController;
 
-import com.shxex.bwts.dome.esEntity.Search;
-import com.shxex.bwts.dome.esService.ISearchEsService ;
+import com.shxex.bwts.dome.entity.Search;
+import com.shxex.bwts.dome.esService.ISearchEsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
 
 /**
 *  前端控制器
