@@ -48,7 +48,7 @@ public class WidthTableUpdate {
             if (ObjectUtils.isEmpty(oldDataMap)) {
                 Map<String, Object> insert = new HashMap<>();
                 for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
-                    insert.put(widthTableFieldInfo.getWidthEntityFieldName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
+                    insert.put(widthTableFieldInfo.getWidthEntityFieldName(), newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
                 }
                 try {
                     bean = service.getEntityClass().newInstance();
@@ -60,7 +60,7 @@ public class WidthTableUpdate {
             } else {
                 for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
                     if ("id".equals(widthTableFieldInfo.getSourceTableColumnName())) {
-                        queryChainWrapper.eq(widthTableFieldInfo.getWidthColumnName(), oldDataMap.get("id"));
+                        queryChainWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), oldDataMap.get("id"));
                         bean = queryChainWrapper.one();
                         break;
                     }
@@ -79,13 +79,16 @@ public class WidthTableUpdate {
                     if (!isJoin(widthTableFieldInfo, parentField)) {
                         continue;
                     }
+                    Object value = null;
                     if (oldDataMap == null) {
-                        updateChainWrapper.eq(parentField.getWidthColumnName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
-                        queryChainWrapper.eq(parentField.getWidthColumnName(), newDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
-                    } else {
-                        updateChainWrapper.eq(parentField.getWidthColumnName(), oldDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
-                        queryChainWrapper.eq(parentField.getWidthColumnName(), oldDataMap.get(widthTableFieldInfo.getSourceEntityFieldName()));
+                        value = newDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
                     }
+                    value = oldDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
+                    if (value == null) {
+                        value = newDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
+                    }
+                    updateChainWrapper.eq(parentField.getWidthTableColumnName(), value);
+                    queryChainWrapper.eq(parentField.getWidthTableColumnName(), value);
                     Object bean = queryChainWrapper.one();
                     BeanMap oldData = new BeanMap(bean);
                     recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
@@ -125,8 +128,8 @@ public class WidthTableUpdate {
         List<WidthTableEntityTree> children = parent.getChildrenList();
         //遍历所有父亲字段
         for (WidthTableFieldInfo widthTableFieldInfo : filedList) {
-            Object oldColumn = oldData.get(widthTableFieldInfo.getWidthEntityFieldName());
-            Object newColumn = newData.get(widthTableFieldInfo.getSourceEntityFieldName());
+            Object oldColumn = oldData.get(widthTableFieldInfo.getWidthTableColumnName());
+            Object newColumn = newData.get(widthTableFieldInfo.getSourceTableColumnName());
             if (oldColumn == null && newColumn == null) {
                 //新旧同时为空不用处理
                 continue;
@@ -135,7 +138,7 @@ public class WidthTableUpdate {
                 continue;
             } else {
                 //新旧数据不同，需要更新
-                updateWrapper.set(widthTableFieldInfo.getWidthColumnName(), newColumn);
+                updateWrapper.set(widthTableFieldInfo.getWidthTableColumnName(), newColumn);
             }
             //如果关联儿子则需要递归更新，处理有外键的情况，递归处理儿子字段
             for (WidthTableEntityTree child : children) {

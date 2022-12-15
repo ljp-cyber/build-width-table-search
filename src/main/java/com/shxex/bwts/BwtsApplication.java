@@ -8,7 +8,6 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  * @author ljp
  */
 @SpringBootApplication
-@EnableElasticsearchRepositories
 public class BwtsApplication {
 
     public static void main(String[] args) {

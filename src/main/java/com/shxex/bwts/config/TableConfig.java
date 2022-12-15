@@ -24,7 +24,7 @@ public class TableConfig {
     public WidthTableContext widthTableContext(TableNameClassContext tableNameClassContext) {
         WidthTableContext widthTableContext = new WidthTableContext();
         for (String tableName : tableNameClassContext.buildWidthTableNameSet()) {
-            widthTableContext.parseJoinEntity(tableNameClassContext.getEntityClass(tableName));
+            widthTableContext.parseJoinEntity(tableNameClassContext.getBuildWidthTableEntityClass(tableName));
         }
         return widthTableContext;
     }

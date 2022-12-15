@@ -35,7 +35,7 @@ public class WidthTableFieldInfo {
      * 宽表 表字段名称
      */
     @ApiModelProperty("宽表 表字段名称")
-    private String widthColumnName;
+    private String widthTableColumnName;
 
     /**
      * 宽表 实体字段名称

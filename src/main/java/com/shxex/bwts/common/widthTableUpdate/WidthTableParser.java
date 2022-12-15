@@ -50,7 +50,7 @@ public class WidthTableParser {
             widthTableFieldInfo.setSourceEntityFieldName(StringUtils.isNotBlank(widthTableField.sourceEntityField()) ? widthTableField.sourceEntityField() : field.getName());
 
             widthTableFieldInfo.setWidthTableName(widthTableEntityTree.getWidthTableName());
-            widthTableFieldInfo.setWidthColumnName(NameUtil.underscoreName(field.getName()));
+            widthTableFieldInfo.setWidthTableColumnName(NameUtil.underscoreName(field.getName()));
 
             widthTableFieldInfo.setWidthEntityFieldName(field.getName());
 
@@ -88,7 +88,7 @@ public class WidthTableParser {
                 widthTableFieldInfo.setForeignKeySourceTable(parentField.getSourceTableName());
                 widthTableFieldInfo.setForeignKeySourceColumn(parentField.getSourceTableColumnName());
                 widthTableFieldInfo.setForeignKeyWidthEntityField(parentField.getWidthEntityFieldName());
-                widthTableFieldInfo.setForeignKeyWidthTableColumn(parentField.getWidthColumnName());
+                widthTableFieldInfo.setForeignKeyWidthTableColumn(parentField.getWidthTableColumnName());
             } else {
                 //foreignKeyChild 不为空，关联指定儿子
                 WidthTableEntityTree childEntity = childrenMap.get(foreignKeyChild);
@@ -96,7 +96,7 @@ public class WidthTableParser {
                 widthTableFieldInfo.setForeignKeySourceTable(childEntity.getSourceTableName());
                 widthTableFieldInfo.setForeignKeySourceColumn(childWidthTableFieldInfo.getSourceTableColumnName());
                 widthTableFieldInfo.setForeignKeyWidthEntityField(childWidthTableFieldInfo.getWidthEntityFieldName());
-                widthTableFieldInfo.setForeignKeyWidthTableColumn(childWidthTableFieldInfo.getWidthColumnName());
+                widthTableFieldInfo.setForeignKeyWidthTableColumn(childWidthTableFieldInfo.getWidthTableColumnName());
             }
         }
 
