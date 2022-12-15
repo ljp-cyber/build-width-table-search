@@ -12,6 +12,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 更新处理期，这里的代码比较硬核
@@ -60,14 +61,18 @@ public class WidthTableUpdate {
             } else {
                 for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
                     if ("id".equals(widthTableFieldInfo.getSourceTableColumnName())) {
-                        queryChainWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), oldDataMap.get("id"));
+                        queryChainWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), Optional.ofNullable(oldDataMap)
+                                .map(map -> map.get("id"))
+                                .orElse(newDataMap.get("id")));
                         bean = queryChainWrapper.one();
                         break;
                     }
                 }
             }
             Map oldData = new BeanMap(bean);
-            updateChainWrapper.eq("id", oldData.get("id"));
+            updateChainWrapper.eq("id", Optional.ofNullable(oldDataMap)
+                    .map(map -> map.get("id"))
+                    .orElse(newDataMap.get("id")));
             recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
         } else {
             //处理外键关联父亲的情况
@@ -79,14 +84,9 @@ public class WidthTableUpdate {
                     if (!isJoin(widthTableFieldInfo, parentField)) {
                         continue;
                     }
-                    Object value = null;
-                    if (oldDataMap == null) {
-                        value = newDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
-                    }
-                    value = oldDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
-                    if (value == null) {
-                        value = newDataMap.get(widthTableFieldInfo.getSourceTableColumnName());
-                    }
+                    Object value = Optional.ofNullable(oldDataMap)
+                            .map(map -> map.get(widthTableFieldInfo.getSourceTableColumnName()))
+                            .orElse(newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
                     updateChainWrapper.eq(parentField.getWidthTableColumnName(), value);
                     queryChainWrapper.eq(parentField.getWidthTableColumnName(), value);
                     Object bean = queryChainWrapper.one();
