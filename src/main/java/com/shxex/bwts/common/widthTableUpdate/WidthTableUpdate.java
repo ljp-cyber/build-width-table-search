@@ -3,6 +3,8 @@ package com.shxex.bwts.common.widthTableUpdate;
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shxex.bwts.common.TableNameClassContext;
+import lombok.AllArgsConstructor;
 import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -15,15 +17,11 @@ import java.util.Map;
  * 更新处理期，这里的代码比较硬核
  */
 @SuppressWarnings("rawtypes")
+@AllArgsConstructor
 public class WidthTableUpdate {
 
-    private Map<String, IService> tableServiceMap;
     private WidthTableEntityTreeContent widthTableEntityTreeContent;
-
-    public WidthTableUpdate(Map<String, IService> tableServiceMap, WidthTableEntityTreeContent widthTableEntityTreeContent) {
-        this.widthTableEntityTreeContent = widthTableEntityTreeContent;
-        this.tableServiceMap = tableServiceMap;
-    }
+    private TableNameClassContext tableNameClassContext;
 
     public void update(String tableName, Map oldDataMap, Map newDataMap) {
         List<WidthTableEntityTree> list = widthTableEntityTreeContent.listByTableName(tableName);
@@ -38,7 +36,7 @@ public class WidthTableUpdate {
     }
 
     private void updateOne(WidthTableEntityTree widthTableEntityTree, Map oldDataMap, Map newDataMap) {
-        IService service = tableServiceMap.get(widthTableEntityTree.getWidthTableName());
+        IService service = tableNameClassContext.getService(widthTableEntityTree.getWidthTableName());
         UpdateChainWrapper updateChainWrapper = service.update();
         QueryChainWrapper queryChainWrapper = service.query();
         //如果更新的是根节点
@@ -138,7 +136,7 @@ public class WidthTableUpdate {
             //如果关联儿子则需要递归更新，处理有外键的情况，递归处理儿子字段
             for (WidthTableEntityTree child : children) {
                 //儿子部分关联表的服务
-                IService childService = tableServiceMap.get(child.getSourceTableName());
+                IService childService = tableNameClassContext.getService(child.getSourceTableName());
                 QueryChainWrapper queryChainWrapper = childService.query();
 
                 List<WidthTableFieldInfo> childFiledList = child.getWidthTableFiledList();

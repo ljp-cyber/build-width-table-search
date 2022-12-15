@@ -11,12 +11,15 @@ public class WidthTableEntityTreeContent {
 
     private Map<String, List<WidthTableEntityTree>> allWidthTableEntityTreeMap = new HashMap<>();
 
-    public List<WidthTableEntityTree> listByTableName(String tableName){
+    public List<WidthTableEntityTree> listByTableName(String tableName) {
         return allWidthTableEntityTreeMap.get(tableName);
     }
 
     public void parseJoinEntity(Class<?> aClass) {
         WidthTableEntityTree widthTableEntityTree = WidthTableEntityTreeParser.recuseParse(aClass, null);
+        if (widthTableEntityTree == null) {
+            return;
+        }
         rootWidthTableEntityTreeList.add(widthTableEntityTree);
         recuseGroupByTableName(Collections.singletonList(widthTableEntityTree));
     }

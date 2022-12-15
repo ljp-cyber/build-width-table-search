@@ -2,7 +2,7 @@ package com.shxex.bwts.processKafkaData;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.shxex.bwts.common.TableNameBeanContent;
+import com.shxex.bwts.common.TableNameClassContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -24,16 +24,18 @@ public class ToEsListener {
     private ApplicationContext applicationContext;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private TableNameClassContext tableNameClassContext;
 
     public void handlerDateChange(Maxwell maxwell) {
-        Class<?> entityClass = TableNameBeanContent.getEntityClass(maxwell.getTable());
+        Class<?> entityClass = tableNameClassContext.getEntityClass(maxwell.getTable());
 
         //提取新旧数据
         ObjectNode newJson = maxwell.getData();
         ObjectNode oldJson = maxwell.getOld();
 
         //获取改表的处理仓库类
-        Class<?> repositoryClazz = TableNameBeanContent.getRepositoryClass(maxwell.getTable());
+        Class<?> repositoryClazz = tableNameClassContext.getRepositoryClass(maxwell.getTable());
         log.debug("处理仓库为：" + repositoryClazz);
 
         //处理增删改查

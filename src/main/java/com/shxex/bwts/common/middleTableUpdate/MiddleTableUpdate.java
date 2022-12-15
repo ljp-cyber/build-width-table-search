@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.shxex.bwts.common.TableNameBeanContent;
+import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.processKafkaData.Maxwell;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -20,16 +21,13 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Slf4j
+@AllArgsConstructor
 public class MiddleTableUpdate {
 
-    private Map<String, IService> tableServiceMap;
-
-    public MiddleTableUpdate(Map<String, IService> tableServiceMap) {
-        this.tableServiceMap = tableServiceMap;
-    }
+    private TableNameClassContext tableNameClassContext;
 
     public void update(Maxwell maxwell) {
-        Class<?> entityClass = TableNameBeanContent.getEntityClass(maxwell.getTable());
+        Class<?> entityClass = tableNameClassContext.getEntityClass(maxwell.getTable());
 
         MiddleTableEntity middleTableEntity = entityClass.getAnnotation(MiddleTableEntity.class);
         if (middleTableEntity == null) {
@@ -45,8 +43,8 @@ public class MiddleTableUpdate {
             return;
         }
 
-        IService sourceService = tableServiceMap.get(maxwell.getTable());
-        IService middleService = tableServiceMap.get(middleTableEntity.middleTable());
+        IService sourceService = tableNameClassContext.getService(maxwell.getTable());
+        IService middleService = tableNameClassContext.getService(middleTableEntity.middleTable());
         String groupColumnValue = groupColumnJsonNode.asText();
 
         Field[] fields = entityClass.getDeclaredFields();

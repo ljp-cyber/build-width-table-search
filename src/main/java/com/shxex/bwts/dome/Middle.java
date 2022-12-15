@@ -1,4 +1,4 @@
-package com.shxex.bwts.dome.middleEntity;
+package com.shxex.bwts.dome;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.shxex.bwts.common.middleTableUpdate.MiddleTableEntity;

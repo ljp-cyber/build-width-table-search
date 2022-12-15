@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration // 当前是一个java 配置类
 @PropertySource(value = "classpath:datasource-config-ljp.properties")
 @EnableTransactionManagement // 开启事务管理
-@MapperScan(basePackages = "com.shxex.bwts.mybatis.dome.mapper") // mapper 扫描
+@MapperScan(basePackages = "com.shxex.bwts.dome.mapper") // mapper 扫描
 @ComponentScan("com.shxex.bwts.dome.service") // 扫描 Service 注解
 public class MybatisPlusConfig {
 
