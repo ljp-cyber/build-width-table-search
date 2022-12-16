@@ -10,17 +10,31 @@ import java.lang.annotation.Target;
 public @interface WidthTableField {
 
     /**
-     * 被注解的字段对应 表字段名称
+     * 被注解的字段对应 源表字段名称
      *
      * @return
      */
     String sourceTableColumn() default "";
 
     /**
-     * 被注解的字段对应 实体字段名称
+     * 被注解的字段对应 宽表字段名称
      *
      * @return
      */
-    String sourceEntityField() default "";
+    String widthTableColumn() default "";
+
+    /**
+     * 是否 源表主键
+     *
+     * @return
+     */
+    boolean sourceTablePrimaryKey() default false;
+
+    /**
+     * 是否 宽表主键
+     *
+     * @return
+     */
+    boolean widthTablePrimaryKey() default false;
 
 }

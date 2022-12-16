@@ -1,5 +1,6 @@
 package com.shxex.bwts.common.widthTableUpdate;
 
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.shxex.bwts.common.utils.NameUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,6 +14,7 @@ public class WidthTableParser {
 
     public static WidthTableEntityTree recuseParse(Class<?> widthTableEntityClass, WidthTableEntityTree parent) {
 
+        TableInfoHelper.getTableInfo("");
         WidthTableEntity annotation = widthTableEntityClass.getAnnotation(WidthTableEntity.class);
         if (annotation == null) {
             return null;
@@ -22,9 +24,9 @@ public class WidthTableParser {
         widthTableEntityTree.setParent(parent);
 
         String table = annotation.sourceTable();
-        String joinTable = annotation.widthTable();
+        String widthTable = annotation.widthTable();
         widthTableEntityTree.setSourceTableName(table);
-        widthTableEntityTree.setWidthTableName(parent != null ? parent.getWidthTableName() : joinTable);
+        widthTableEntityTree.setWidthTableName(parent != null ? parent.getWidthTableName() : widthTable);
 
 
         List<WidthTableFieldInfo> filedList = new ArrayList<>();
@@ -36,6 +38,11 @@ public class WidthTableParser {
         Map<String, WidthTableEntityTree> childrenMap = new HashMap<>();
         widthTableEntityTree.setChildrenList(childrenList);
         widthTableEntityTree.setChildrenMap(childrenMap);
+        widthTableEntityTree.setSourceTablePrimaryKey("id");
+        widthTableEntityTree.setWidthTablePrimaryKey("id");
+        if (parent != null) {
+            widthTableEntityTree.setWidthTablePrimaryKey(parent.getWidthTablePrimaryKey());
+        }
 
         Field[] fields = widthTableEntityClass.getDeclaredFields();
         for (Field field : fields) {
@@ -47,13 +54,16 @@ public class WidthTableParser {
             widthTableFieldInfo.setSourceTableName(widthTableEntityTree.getSourceTableName());
             widthTableFieldInfo.setSourceTableColumnName(StringUtils.isNotBlank(widthTableField.sourceTableColumn()) ? widthTableField.sourceTableColumn() : NameUtil.underscoreName(field.getName()));
 
-            widthTableFieldInfo.setSourceEntityFieldName(StringUtils.isNotBlank(widthTableField.sourceEntityField()) ? widthTableField.sourceEntityField() : field.getName());
-
             widthTableFieldInfo.setWidthTableName(widthTableEntityTree.getWidthTableName());
-            widthTableFieldInfo.setWidthTableColumnName(NameUtil.underscoreName(field.getName()));
+            widthTableFieldInfo.setWidthTableColumnName(StringUtils.isNotBlank(widthTableField.widthTableColumn()) ? widthTableField.widthTableColumn() : NameUtil.underscoreName(field.getName()));
 
-            widthTableFieldInfo.setWidthEntityFieldName(field.getName());
-
+            if (widthTableField.widthTablePrimaryKey()) {
+                widthTableEntityTree.setWidthTablePrimaryKey(widthTableFieldInfo.getWidthTableColumnName());
+            }
+            if (widthTableField.sourceTablePrimaryKey()) {
+                widthTableEntityTree.setSourceTablePrimaryKey(widthTableFieldInfo.getSourceTableColumnName());
+                widthTableEntityTree.setWidthTableColumnForSourcePrimaryKey(widthTableFieldInfo.getWidthTableColumnName());
+            }
             filedList.add(widthTableFieldInfo);
             fieldMap.put(field.getName(), widthTableFieldInfo);
         }
@@ -67,7 +77,7 @@ public class WidthTableParser {
             WidthTableEntityTree childWidthTableEntityTree = recuseParse(fieldType, widthTableEntityTree);
             if (childWidthTableEntityTree != null) {
                 childrenList.add(childWidthTableEntityTree);
-                childrenMap.put(field.getName(), childWidthTableEntityTree);
+                childrenMap.put(childWidthTableEntityTree.getSourceTableName(), childWidthTableEntityTree);
             }
         }
 
@@ -79,23 +89,23 @@ public class WidthTableParser {
             }
             WidthTableForeignKey widthTableForeignKey = field.getAnnotation(WidthTableForeignKey.class);
             if (widthTableForeignKey == null) {
+                widthTableFieldInfo.setForeignKeyRel(WidthTableFieldInfo.FOREIGN_KEY_REL_NONE);
                 continue;
             }
-            String foreignKeyChild = widthTableForeignKey.foreignKeyChild();
-            if (StringUtils.isBlank(foreignKeyChild)) {
-                //foreignKeyChild 为空，默认关联父亲
-                WidthTableFieldInfo parentField = parent.getWidthTableFieldMap().get(widthTableForeignKey.foreignKeyField());
+            if (StringUtils.isBlank(widthTableForeignKey.foreignKeySourceTable())) {
+                //foreignKeySourceTable 为空，默认关联父亲
+                WidthTableFieldInfo parentField = parent.getWidthTableFieldMap().get(widthTableForeignKey.foreignKey());
+                widthTableFieldInfo.setForeignKeyRel(WidthTableFieldInfo.FOREIGN_KEY_REL_PARENT);
                 widthTableFieldInfo.setForeignKeySourceTable(parentField.getSourceTableName());
                 widthTableFieldInfo.setForeignKeySourceColumn(parentField.getSourceTableColumnName());
-                widthTableFieldInfo.setForeignKeyWidthEntityField(parentField.getWidthEntityFieldName());
                 widthTableFieldInfo.setForeignKeyWidthTableColumn(parentField.getWidthTableColumnName());
             } else {
-                //foreignKeyChild 不为空，关联指定儿子
-                WidthTableEntityTree childEntity = childrenMap.get(foreignKeyChild);
-                WidthTableFieldInfo childWidthTableFieldInfo = childEntity.getWidthTableFieldMap().get(widthTableForeignKey.foreignKeyField());
+                //foreignKeySourceTable 不为空，关联指定儿子
+                WidthTableEntityTree childEntity = childrenMap.get(widthTableForeignKey.foreignKeySourceTable());
+                widthTableFieldInfo.setForeignKeyRel(WidthTableFieldInfo.FOREIGN_KEY_REL_CHILD);
+                WidthTableFieldInfo childWidthTableFieldInfo = childEntity.getWidthTableFieldMap().get(widthTableForeignKey.foreignKey());
                 widthTableFieldInfo.setForeignKeySourceTable(childEntity.getSourceTableName());
                 widthTableFieldInfo.setForeignKeySourceColumn(childWidthTableFieldInfo.getSourceTableColumnName());
-                widthTableFieldInfo.setForeignKeyWidthEntityField(childWidthTableFieldInfo.getWidthEntityFieldName());
                 widthTableFieldInfo.setForeignKeyWidthTableColumn(childWidthTableFieldInfo.getWidthTableColumnName());
             }
         }

@@ -1,24 +1,23 @@
 package com.shxex.bwts.common.widthTableUpdate;
 
-import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shxex.bwts.common.TableNameClassContext;
+import com.shxex.bwts.common.utils.TableInfoUtil;
 import lombok.AllArgsConstructor;
-import org.apache.commons.beanutils.BeanMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 更新处理期，这里的代码比较硬核
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "unchecked"})
 @AllArgsConstructor
+@Slf4j
 public class WidthTableUpdate {
 
     private WidthTableContext widthTableContext;
@@ -42,76 +41,48 @@ public class WidthTableUpdate {
     private void updateOne(WidthTableEntityTree widthTableEntityTree, Map oldDataMap, Map newDataMap) {
         IService service = tableNameClassContext.getService(widthTableEntityTree.getWidthTableName());
         UpdateChainWrapper updateChainWrapper = service.update();
-        QueryChainWrapper queryChainWrapper = service.query();
-        //如果更新的是根节点
+        Object id = Optional.ofNullable(oldDataMap)
+                .map(map -> map.get("id"))
+                .orElse(newDataMap.get("id"));
         if (widthTableEntityTree.getParent() == null) {
-            Object bean = new HashMap<>();
+            //处理更新的是根节点的情况
+            Map oldWidthTableData = new HashMap<>();
             if (ObjectUtils.isEmpty(oldDataMap)) {
-                Map<String, Object> insert = new HashMap<>();
+                //旧数据为空，说明是新增的数据，需要插入新数据
+                Map insert = new HashMap<>();
+
                 for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
-                    insert.put(widthTableFieldInfo.getWidthEntityFieldName(), newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
+                    String fieldNameFromCache = TableInfoUtil.getColumnFieldNameFromCache(
+                            widthTableFieldInfo.getWidthTableName(),
+                            widthTableFieldInfo.getWidthTableColumnName());
+                    insert.put(fieldNameFromCache, newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
+                    oldWidthTableData.put(widthTableFieldInfo.getWidthTableColumnName(), newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
                 }
                 try {
-                    bean = service.getEntityClass().newInstance();
-                    BeanUtils.populate(bean, insert);
+                    Object insertEntity = service.getEntityClass().newInstance();
+                    BeanUtils.populate(insertEntity, insert);
+                    service.save(insertEntity);
                 } catch (Exception exception) {
-                    exception.printStackTrace();
+                    log.error(exception.getMessage(), exception);
                 }
-                service.save(bean);
+                updateChainWrapper.eq("id", oldWidthTableData.get("id"));
             } else {
-                for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
-                    if ("id".equals(widthTableFieldInfo.getSourceTableColumnName())) {
-                        queryChainWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), Optional.ofNullable(oldDataMap)
-                                .map(map -> map.get("id"))
-                                .orElse(newDataMap.get("id")));
-                        bean = queryChainWrapper.one();
-                        break;
-                    }
-                }
+                //旧数据不为空，说明宽表已经存在该条数据，查出来用
+                QueryWrapper queryWrapper = new QueryWrapper();
+                queryWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), id);
+                queryWrapper.last("limit 1");
+                oldWidthTableData = service.getMap(queryWrapper);
+                updateChainWrapper.eq("id", id);
             }
-            Map oldData = new BeanMap(bean);
-            updateChainWrapper.eq("id", Optional.ofNullable(oldDataMap)
-                    .map(map -> map.get("id"))
-                    .orElse(newDataMap.get("id")));
-            recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
+            if (oldWidthTableData == null) {
+                oldWidthTableData = new HashMap();
+            }
+            recuseUpdate(updateChainWrapper, widthTableEntityTree, oldWidthTableData, newDataMap);
         } else {
-            //处理外键关联父亲的情况
-            List<WidthTableFieldInfo> parentFiledList = widthTableEntityTree.getParent().getWidthTableFiledList();
-            List<WidthTableFieldInfo> filedList = widthTableEntityTree.getWidthTableFiledList();
-            a:
-            for (WidthTableFieldInfo widthTableFieldInfo : filedList) {
-                for (WidthTableFieldInfo parentField : parentFiledList) {
-                    if (!isJoin(widthTableFieldInfo, parentField)) {
-                        continue;
-                    }
-                    Object value = Optional.ofNullable(oldDataMap)
-                            .map(map -> map.get(widthTableFieldInfo.getSourceTableColumnName()))
-                            .orElse(newDataMap.get(widthTableFieldInfo.getSourceTableColumnName()));
-                    updateChainWrapper.eq(parentField.getWidthTableColumnName(), value);
-                    queryChainWrapper.eq(parentField.getWidthTableColumnName(), value);
-                    Object bean = queryChainWrapper.one();
-                    BeanMap oldData = new BeanMap(bean);
-                    recuseUpdate(updateChainWrapper, widthTableEntityTree, oldData, newDataMap);
-                    break a;
-                }
-            }
+            updateChainWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), id);
+            recuseUpdate(updateChainWrapper, widthTableEntityTree, oldDataMap, newDataMap);
         }
         updateChainWrapper.update();
-    }
-
-    private boolean isJoin(WidthTableFieldInfo widthTableFieldInfo, WidthTableFieldInfo parentField) {
-        if (isJoinParent(widthTableFieldInfo, parentField)) return true;
-        if (isJoinParent(parentField, widthTableFieldInfo)) return true;
-        return false;
-    }
-
-    private boolean isJoinParent(WidthTableFieldInfo widthTableFieldInfo, WidthTableFieldInfo parentField) {
-        if (parentField.getSourceTableName().equals(widthTableFieldInfo.getForeignKeySourceTable())) {
-            if (parentField.getSourceTableColumnName().equals(widthTableFieldInfo.getForeignKeySourceColumn())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -124,55 +95,72 @@ public class WidthTableUpdate {
      * @param newData       父亲新数据
      */
     private void recuseUpdate(UpdateChainWrapper updateWrapper, WidthTableEntityTree parent, Map oldData, Map newData) {
-        List<WidthTableFieldInfo> filedList = parent.getWidthTableFiledList();
-        List<WidthTableEntityTree> children = parent.getChildrenList();
         //遍历所有父亲字段
-        for (WidthTableFieldInfo widthTableFieldInfo : filedList) {
-            Object oldColumn = oldData.get(widthTableFieldInfo.getWidthTableColumnName());
-            Object newColumn = newData.get(widthTableFieldInfo.getSourceTableColumnName());
-            if (oldColumn == null && newColumn == null) {
+        for (WidthTableFieldInfo widthTableFieldInfo : parent.getWidthTableFiledList()) {
+            Object oldValue = oldData.get(widthTableFieldInfo.getWidthTableColumnName());
+            Object newValue = newData.get(widthTableFieldInfo.getSourceTableColumnName());
+            if (oldValue == null && newValue == null) {
                 //新旧同时为空不用处理
                 continue;
-            } else if (oldColumn != null && newColumn != null && oldColumn.equals(newColumn)) {
+            } else if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
                 //新旧数据相同不用处理
                 continue;
             } else {
                 //新旧数据不同，需要更新
-                updateWrapper.set(widthTableFieldInfo.getWidthTableColumnName(), newColumn);
+                updateWrapper.set(widthTableFieldInfo.getWidthTableColumnName(), newValue);
             }
-            //如果关联儿子则需要递归更新，处理有外键的情况，递归处理儿子字段
-            for (WidthTableEntityTree child : children) {
-                //儿子部分关联表的服务
-                IService childService = tableNameClassContext.getService(child.getSourceTableName());
-                QueryChainWrapper queryChainWrapper = childService.query();
 
-                List<WidthTableFieldInfo> childFiledList = child.getWidthTableFiledList();
-                for (WidthTableFieldInfo childWidthTableFieldInfo : childFiledList) {
-                    if (isJoinParent(widthTableFieldInfo, childWidthTableFieldInfo) && newColumn != null) {
-                        //1、如果外键关联儿子，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
-                        queryChainWrapper.eq(widthTableFieldInfo.getForeignKeySourceColumn(), newColumn);
-                    } else if (isJoinParent(childWidthTableFieldInfo, widthTableFieldInfo) && newColumn != null) {
-                        //2、如果儿子外键关联父亲字段，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
-                        queryChainWrapper.eq(childWidthTableFieldInfo.getSourceTableColumnName(), newColumn);
-                    } else {
-                        //其余情况不用处理儿子
+            //如果父亲关联儿子则需要递归更新，处理有外键的情况，递归处理儿子字段
+            if (WidthTableFieldInfo.FOREIGN_KEY_REL_CHILD.equals(widthTableFieldInfo.getForeignKeyRel())) {
+                //这里已经处理父亲关联儿子的情况，下面遍历儿子的时候就不用处理了
+
+                //1、查出新儿子数据
+                Map childNewData;
+                if (newValue == null) {
+                    //如果新外键为空则，新数据都是空的，不用查了
+                    childNewData = Collections.emptyMap();
+                } else {
+                    //如果新外键不为空，则查出新数据
+                    IService childService = tableNameClassContext.getService(widthTableFieldInfo.getForeignKeySourceTable());
+                    QueryWrapper queryWrapper = new QueryWrapper();
+                    queryWrapper.eq(widthTableFieldInfo.getForeignKeySourceColumn(), newData.get(widthTableFieldInfo.getForeignKeySourceColumn()));
+                    queryWrapper.last("limit 1");
+                    childNewData = childService.getMap(queryWrapper);
+                }
+                if (childNewData == null) {
+                    childNewData = Collections.emptyMap();
+                }
+
+                //2、传递并递归更新
+                recuseUpdate(updateWrapper, parent.getChildrenMap().get(widthTableFieldInfo.getForeignKeySourceTable()), oldData, childNewData);
+            }
+
+            //历遍所有儿子，处理有外键的情况
+            for (WidthTableEntityTree child : parent.getChildrenList()) {
+                for (WidthTableFieldInfo childWidthTableFieldInfo : child.getWidthTableFiledList()) {
+                    if (!WidthTableFieldInfo.FOREIGN_KEY_REL_PARENT.equals(childWidthTableFieldInfo.getForeignKeyRel())) {
                         continue;
                     }
-                    //获取儿子数据,如果新数据为空，则置空儿子
-                    Map childNewData = null;
-                    if (newColumn != null) {
-                        List list = queryChainWrapper.list();
-                        for (Object obj : list) {
-                            BeanMap temp = new BeanMap(obj);
-                            if (childNewData == null) {
-                                childNewData = temp;
-                            }
-                        }
+                    //如果儿子外键关联父亲字段，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
+                    //上面已经处理父亲关联儿子的情况，这里只处理儿子关联父亲的情况
+
+                    //1、查出新儿子数据
+                    Map childNewData;
+                    if (newValue == null) {
+                        //如果新外键为空则，新数据都是空的，不用查了
+                        childNewData = Collections.emptyMap();
+                    } else {
+                        //如果新外键不为空，则查出新数据
+                        IService childService = tableNameClassContext.getService(child.getSourceTableName());
+                        QueryWrapper queryWrapper = new QueryWrapper();
+                        queryWrapper.eq(childWidthTableFieldInfo.getSourceTableColumnName(), newData.get(childWidthTableFieldInfo.getSourceTableColumnName()));
+                        queryWrapper.last("limit 1");
+                        childNewData = childService.getMap(queryWrapper);
                     }
                     if (childNewData == null) {
-                        childNewData = new HashMap<>();
+                        childNewData = Collections.emptyMap();
                     }
-                    //传递并递归更新
+                    //2、传递并递归更新
                     recuseUpdate(updateWrapper, child, oldData, childNewData);
                 }
             }

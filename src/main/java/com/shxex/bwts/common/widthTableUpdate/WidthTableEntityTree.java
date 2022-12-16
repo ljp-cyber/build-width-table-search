@@ -7,6 +7,7 @@ import java.util.Map;
 
 /**
  * 树结构描述宽表字段间的联系
+ * 源表即事实表火维度表
  */
 @Data
 public class WidthTableEntityTree {
@@ -16,9 +17,22 @@ public class WidthTableEntityTree {
      */
     private String widthTableName;
     /**
-     * 事实表或维度表 表名称
+     * 源表 表名称
      */
     private String sourceTableName;
+
+    /**
+     * 宽表 主键字段名
+     */
+    private String widthTablePrimaryKey;
+    /**
+     * 宽表 和源表对应的主键字段
+     */
+    private String widthTableColumnForSourcePrimaryKey;
+    /**
+     * 源表 主键字段名
+     */
+    private String sourceTablePrimaryKey;
 
     /**
      * 宽表 字段描述对象 列表
@@ -35,11 +49,12 @@ public class WidthTableEntityTree {
     private WidthTableEntityTree parent;
 
     /**
-     * 子对象列表
+     * 宽表 子对象 列表
      */
     private List<WidthTableEntityTree> childrenList;
     /**
-     * 虚拟字段名称-子对象 映射
+     * 源表名-子对象 映射
      */
     private Map<String, WidthTableEntityTree> childrenMap;
+
 }

@@ -9,6 +9,10 @@ import lombok.Data;
 @Data
 public class WidthTableFieldInfo {
 
+    public final static Integer FOREIGN_KEY_REL_NONE = 0;
+    public final static Integer FOREIGN_KEY_REL_PARENT = 1;
+    public final static Integer FOREIGN_KEY_REL_CHILD = 2;
+
     /**
      * 事实表或维度表 表名称
      */
@@ -19,12 +23,6 @@ public class WidthTableFieldInfo {
      */
     @ApiModelProperty("事实表或维度表 表字段名称")
     private String sourceTableColumnName;
-
-    /**
-     * 事实表或维度表 实体字段名称
-     */
-    @ApiModelProperty("事实表或维度表 实体字段名称")
-    private String sourceEntityFieldName;
 
     /**
      * 宽表 表名称
@@ -38,10 +36,13 @@ public class WidthTableFieldInfo {
     private String widthTableColumnName;
 
     /**
-     * 宽表 实体字段名称
+     * 外键关联情况 是否外键外键、外键关联父亲、外键关联父亲儿子
+     * public final static Integer FOREIGN_KEY_REL_NONE = 0;
+     * public final static Integer FOREIGN_KEY_REL_PARENT = 1;
+     * public final static Integer FOREIGN_KEY_REL_CHILD = 2;
      */
-    @ApiModelProperty("宽表 实体字段名称")
-    private String widthEntityFieldName;
+    @ApiModelProperty("外键关联情况 不是外键、外键关联父亲、外键关联儿子")
+    private Integer foreignKeyRel;
 
     /**
      * 关联事实表或维度表 表名称
@@ -60,10 +61,4 @@ public class WidthTableFieldInfo {
      */
     @ApiModelProperty("关联宽表 表字段名称")
     private String foreignKeyWidthTableColumn;
-
-    /**
-     * 关联宽表 表字段名称
-     */
-    @ApiModelProperty("关联宽表 实体字段名称")
-    private String foreignKeyWidthEntityField;
 }
