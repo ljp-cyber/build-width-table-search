@@ -29,7 +29,7 @@ public class MybatisPlusTest {
 
         WidthTableContext widthTableContext = new WidthTableContext();
         widthTableContext.parseJoinEntity(SearchJoinEntity.class);
-        WidthTableUpdate widthTableUpdate = new WidthTableUpdate(widthTableContext, tableNameClassContext);
+        WidthTableUpdate widthTableUpdate = new WidthTableUpdate(widthTableContext, tableNameClassContext, objectMapper);
 
         User user = new User();
         user.setId(1L);

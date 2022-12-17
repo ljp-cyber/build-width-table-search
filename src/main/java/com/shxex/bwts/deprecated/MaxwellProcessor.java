@@ -30,11 +30,11 @@ public class MaxwellProcessor {
 
         String database = maxwell.getDatabase();
         String table = maxwell.getTable();
-        ObjectNode old = maxwell.getOld();
-        ObjectNode data = maxwell.getData();
-        old.fields().forEachRemaining(stringJsonNodeEntry -> {
+        Map old = maxwell.getOld();
+        Map data = maxwell.getData();
+        for (Object fieldName : old.keySet()) {
             Map<String, Map<String, Map<String, Object>>> dbToEsMap = new HashMap<>();
-            Object object = dbToEsMap.get(database).get(table).get(stringJsonNodeEntry.getKey());
+            Object object = dbToEsMap.get(database).get(table).get(old.get(fieldName));
 
             ArrayList<UpdateQuery> queries = new ArrayList<>();
             IndexCoordinates indexCoordinates = IndexCoordinates.of("");
@@ -80,7 +80,7 @@ public class MaxwellProcessor {
 //            elasticsearchTemplate.bulkUpdate(queries, User.class);
             elasticsearchTemplate.bulkUpdate(queries, bulkOptions, indexCoordinates);
 
-        });
+        }
 
     }
 

@@ -1,7 +1,6 @@
 package com.shxex.bwts.processKafkaData;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.utils.NameUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -36,10 +36,6 @@ public class ToEsListener {
 
         Class<?> entityClass = tableNameClassContext.getEntityClass(maxwell.getTable());
 
-        //提取新旧数据
-        ObjectNode newJson = maxwell.getData();
-        ObjectNode oldJson = maxwell.getOld();
-
         //获取改表的处理仓库类
         Class<?> repositoryClazz = tableNameClassContext.getRepositoryClass(maxwell.getTable());
         log.debug("处理仓库为：" + repositoryClazz);
@@ -50,13 +46,13 @@ public class ToEsListener {
         ElasticsearchRepository repository = (ElasticsearchRepository) applicationContext.getBean(repositoryClazz);
         switch (maxwell.getType()) {
             case Maxwell.INSERT:
-                repository.save(getEntity(entityClass, newJson));
+                repository.save(getEntity(entityClass, maxwell.getData()));
                 break;
             case Maxwell.DELETE:
-                repository.deleteById(newJson.get("id"));
+                repository.deleteById(maxwell.getData().get("id"));
                 break;
             case Maxwell.UPDATE:
-                repository.save(getEntity(entityClass, newJson));
+                repository.save(getEntity(entityClass, maxwell.getOld()));
                 break;
         }
         Iterable all = repository.findAll();
@@ -65,15 +61,15 @@ public class ToEsListener {
         }
     }
 
-    private Object getEntity(Class<?> entityClass, ObjectNode newJson) {
+    private Object getEntity(Class<?> entityClass, Map data) {
         List<String> fields = new ArrayList<>();
-        newJson.fieldNames().forEachRemaining(key -> {
-            fields.add(key);
-        });
-        for (String field : fields) {
-            newJson.set(NameUtil.camelName(field), newJson.get(field));
+        for (Object o : data.keySet()) {
+            fields.add(o.toString());
         }
-        Object value = objectMapper.convertValue(newJson, entityClass);
+        for (String field : fields) {
+            data.put(NameUtil.camelName(field), data.get(field));
+        }
+        Object value = objectMapper.convertValue(data, entityClass);
         return value;
     }
 }

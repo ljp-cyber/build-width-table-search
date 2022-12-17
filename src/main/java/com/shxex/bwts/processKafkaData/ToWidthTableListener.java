@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
-
 /**
  * @author ljp
  */
@@ -17,14 +15,10 @@ public class ToWidthTableListener {
 
     @Autowired
     private WidthTableUpdate widthTableUpdate;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     public void handlerDataChange(Maxwell maxwell) {
         log.debug("开始处理到宽表的数据" + maxwell);
-        widthTableUpdate.update(maxwell.getTable(),
-                objectMapper.convertValue(maxwell.getOld(), Map.class),
-                objectMapper.convertValue(maxwell.getData(), Map.class));
+        widthTableUpdate.update(maxwell.getTable(), maxwell.getOld(), maxwell.getData());
     }
 
 }

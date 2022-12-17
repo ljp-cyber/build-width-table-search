@@ -1,10 +1,10 @@
 package com.shxex.bwts.processKafkaData;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author ljp
@@ -29,20 +29,20 @@ public class Maxwell implements Serializable {
     private String ts;
     private String xid;
     private String commit;
-    private ObjectNode data;
-    private ObjectNode old;
+    private Map data;
+    private Map old;
 
     public String getType() {
         if (!UPDATE.equals(type)) {
             return type;
         }
-        JsonNode newDeletedJsonNode = this.getData().get(Maxwell.IS_DELETED);
-        JsonNode oldIsDeletedJsonNode = this.getOld().get(Maxwell.IS_DELETED);
-        if (newDeletedJsonNode == null && oldIsDeletedJsonNode == null) {
+        Object newIsDeletedJsonNode = this.getData().get(Maxwell.IS_DELETED);
+        Object oldIsDeletedJsonNode = this.getOld().get(Maxwell.IS_DELETED);
+        if (newIsDeletedJsonNode == null && oldIsDeletedJsonNode == null) {
             return type;
         }
-        int newIsDeleted = newDeletedJsonNode.asInt(Maxwell.notDeleted);
-        int oldIsDeleted = oldIsDeletedJsonNode.asInt(Maxwell.notDeleted);
+        int newIsDeleted = NumberUtils.toInt(newIsDeletedJsonNode.toString(), Maxwell.notDeleted);
+        int oldIsDeleted = NumberUtils.toInt(oldIsDeletedJsonNode.toString(), Maxwell.notDeleted);
         if (Maxwell.notDeleted.equals(oldIsDeleted) && Maxwell.deleted.equals(newIsDeleted)) {
             return DELETE;
         }

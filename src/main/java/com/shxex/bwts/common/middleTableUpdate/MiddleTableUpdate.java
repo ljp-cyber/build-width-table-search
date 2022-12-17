@@ -3,7 +3,6 @@ package com.shxex.bwts.common.middleTableUpdate;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.utils.NameUtil;
 import com.shxex.bwts.processKafkaData.Maxwell;
@@ -46,14 +45,14 @@ public class MiddleTableUpdate {
                 return;
             }
 
-            JsonNode groupColumnJsonNode = maxwell.getData().get(middleTableEntity.groupColumn());
-            if (groupColumnJsonNode == null) {
+            Object groupColumnValue = maxwell.getData().get(middleTableEntity.groupColumn());
+            if (groupColumnValue == null) {
                 return;
             }
 
             IService sourceService = tableNameClassContext.getService(maxwell.getTable());
             IService middleService = tableNameClassContext.getService(middleTableEntity.middleTable());
-            String groupColumnValue = groupColumnJsonNode.asText();
+            String groupColumnName = groupColumnValue.toString();
 
             Field[] fields = entityClass.getDeclaredFields();
             Map<String, String> aggregateQueryField = new HashMap<>();
@@ -66,15 +65,15 @@ public class MiddleTableUpdate {
             }
 
             QueryWrapper queryWrapper = new QueryWrapper();
-            queryWrapper.eq(middleTableEntity.groupColumn(), groupColumnValue);
+            queryWrapper.eq(middleTableEntity.groupColumn(), groupColumnName);
             queryWrapper.select(aggregateQueryField.keySet().toArray(new String[aggregateQueryField.keySet().size()]));
             List<Map<String, Object>> list = sourceService.listMaps(queryWrapper);
 
-            if (middleService.getById(groupColumnValue) == null) {
+            if (middleService.getById(groupColumnName) == null) {
                 Map<String, Object> save = new HashMap<>();
                 for (String key : aggregateQueryField.keySet()) {
                     if (middleTableEntity.groupColumn().equals(key)) {
-                        save.putIfAbsent("id", groupColumnValue);
+                        save.putIfAbsent("id", groupColumnName);
                         continue;
                     }
                     save.put(NameUtil.camelName(aggregateQueryField.get(key)), aggregateColumn(list, key));
@@ -88,7 +87,7 @@ public class MiddleTableUpdate {
                 }
             } else {
                 UpdateChainWrapper updateChainWrapper = middleService.update();
-                updateChainWrapper.eq("id", groupColumnValue);
+                updateChainWrapper.eq("id", groupColumnName);
                 for (String key : aggregateQueryField.keySet()) {
                     if (middleTableEntity.groupColumn().equals(key)) {
                         continue;

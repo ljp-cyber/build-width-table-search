@@ -1,15 +1,16 @@
 package com.shxex.bwts.dome;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.shxex.bwts.config.KafkaConfig;
-import com.shxex.bwts.dome.entity.User;
 import com.shxex.bwts.processKafkaData.Maxwell;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author ljp
@@ -25,17 +26,16 @@ public class KafkaTest {
         KafkaTemplate<Integer, String> kafkaTemplate = (KafkaTemplate<Integer, String>) ctx.getBean("kafkaTemplate");
         for (int i = 0; i < 10; i++) {
             Maxwell maxwell = new Maxwell();
-            maxwell.setDatabase("my_website");
+            maxwell.setDatabase("bwts");
             maxwell.setTable("user_");
 
-            User user = new User();
-            user.setId(1L);
-            user.setUserName("小娜");
-            ObjectNode data = objectMapper.convertValue(user, ObjectNode.class);
-            maxwell.setData(data);
-            maxwell.setOld(data);
+            Map user = new HashMap();
+            user.put("id", 1L);
+            user.put("userName", "小娜");
+            maxwell.setData(user);
+            maxwell.setOld(user);
 
-            ListenableFuture<SendResult<Integer, String>> send = kafkaTemplate.send("maxwell-common", maxwell.toString());
+            ListenableFuture<SendResult<Integer, String>> send = kafkaTemplate.send("bwts", maxwell.toString());
 
             send.addCallback(new ListenableFutureCallback<SendResult<Integer, String>>() {
                 @Override

@@ -1,5 +1,6 @@
 package com.shxex.bwts.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.middleTableUpdate.MiddleTableContext;
 import com.shxex.bwts.common.middleTableUpdate.MiddleTableUpdate;
@@ -40,12 +41,15 @@ public class TableConfig {
 
 
     @Bean
-    public WidthTableUpdate widthTableUpdate(TableNameClassContext tableNameClassContext, WidthTableContext widthTableContext) {
-        return new WidthTableUpdate(widthTableContext, tableNameClassContext);
+    public WidthTableUpdate widthTableUpdate(
+            TableNameClassContext tableNameClassContext,
+            WidthTableContext widthTableContext,
+            ObjectMapper objectMapper) {
+        return new WidthTableUpdate(widthTableContext, tableNameClassContext, objectMapper);
     }
 
     @Bean
-    public MiddleTableUpdate middleTableUpdate(TableNameClassContext tableNameClassContext,MiddleTableContext middleTableContext) {
+    public MiddleTableUpdate middleTableUpdate(TableNameClassContext tableNameClassContext, MiddleTableContext middleTableContext) {
         return new MiddleTableUpdate(tableNameClassContext, middleTableContext);
     }
 
