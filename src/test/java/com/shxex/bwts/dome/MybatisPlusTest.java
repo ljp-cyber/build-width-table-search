@@ -5,10 +5,11 @@ import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.widthTableUpdate.WidthTableContext;
 import com.shxex.bwts.common.widthTableUpdate.WidthTableUpdate;
 import com.shxex.bwts.config.MybatisPlusConfig;
-import com.shxex.bwts.dome.entity.User;
 import com.shxex.bwts.dome.joinEntity.SearchJoinEntity;
+import com.shxex.bwts.processKafkaData.Maxwell;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,12 +32,15 @@ public class MybatisPlusTest {
         widthTableContext.parseJoinEntity(SearchJoinEntity.class);
         WidthTableUpdate widthTableUpdate = new WidthTableUpdate(widthTableContext, tableNameClassContext, objectMapper);
 
-        User user = new User();
-        user.setId(1L);
-        user.setUserName("小娜");
-        Map data = objectMapper.convertValue(user, Map.class);
+        Map user = new HashMap<>();
+        user.put("id", 1L);
+        user.put("userName", "小娜");
+        Maxwell maxwell = new Maxwell();
+        maxwell.setTable("user_");
+        maxwell.setData(user);
+        maxwell.setOld(user);
 
-        widthTableUpdate.update("user_", data, data);
+        widthTableUpdate.update(maxwell);
 
         ctx.close();
     }

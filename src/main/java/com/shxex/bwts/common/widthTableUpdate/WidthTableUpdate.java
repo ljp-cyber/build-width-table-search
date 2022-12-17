@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.utils.TableInfoUtil;
+import com.shxex.bwts.processKafkaData.Maxwell;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -24,39 +25,39 @@ public class WidthTableUpdate {
     private TableNameClassContext tableNameClassContext;
     private ObjectMapper objectMapper;
 
-    public void update(String tableName, Map oldDataMap, Map newDataMap) {
-        List<WidthTableEntityTree> list = widthTableContext.listByTableName(tableName);
+    public void update(Maxwell maxwell) {
+        List<WidthTableEntityTree> list = widthTableContext.listByTableName(maxwell.getTable());
         if (list == null) {
             return;
         }
         //遍历所有影响到的关联实体
         for (WidthTableEntityTree widthTableEntityTree : list) {
             try {
-                updateOne(widthTableEntityTree, oldDataMap, newDataMap);
+                updateOne(widthTableEntityTree, maxwell);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
         }
     }
 
-    private void updateOne(WidthTableEntityTree widthTableEntityTree, Map oldSourceTableData, Map newSourceTableData) {
+    private void updateOne(WidthTableEntityTree widthTableEntityTree, Maxwell maxwell) {
         IService service = tableNameClassContext.getService(widthTableEntityTree.getWidthTableName());
         UpdateWrapper updateWrapper = new UpdateWrapper();
 
-        Object primaryKeyValue = Optional.ofNullable(oldSourceTableData)
+        Object primaryKeyValue = Optional.ofNullable(maxwell.getOld())
                 .map(map -> map.get(widthTableEntityTree.getSourceTablePrimaryKey()))
-                .orElse(newSourceTableData.get(widthTableEntityTree.getSourceTablePrimaryKey()));
+                .orElse(maxwell.getData().get(widthTableEntityTree.getSourceTablePrimaryKey()));
 
         Map oldWidthTableData = new HashMap<>();
-        if (widthTableEntityTree.getParent() == null && ObjectUtils.isEmpty(oldSourceTableData)) {
+        if (widthTableEntityTree.getParent() == null && ObjectUtils.isEmpty(maxwell.getOld())) {
             //处理更新的是根节点的情况j，旧数据为空，说明是新增的数据，需要插入新数据
             Map insert = new HashMap<>();
             for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
                 String fieldName = TableInfoUtil.getColumnFieldNameFromCache(
                         widthTableFieldInfo.getWidthTableName(),
                         widthTableFieldInfo.getWidthTableColumnName());
-                insert.put(fieldName, newSourceTableData.get(widthTableFieldInfo.getSourceTableColumnName()));
-                oldWidthTableData.put(widthTableFieldInfo.getWidthTableColumnName(), newSourceTableData.get(widthTableFieldInfo.getSourceTableColumnName()));
+                insert.put(fieldName, maxwell.getData().get(widthTableFieldInfo.getSourceTableColumnName()));
+                oldWidthTableData.put(widthTableFieldInfo.getWidthTableColumnName(), maxwell.getData().get(widthTableFieldInfo.getSourceTableColumnName()));
             }
             service.save(objectMapper.convertValue(insert, service.getEntityClass()));
         } else {
@@ -71,7 +72,7 @@ public class WidthTableUpdate {
         }
 
         updateWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), primaryKeyValue);
-        recuseUpdate(updateWrapper, widthTableEntityTree, oldWidthTableData, newSourceTableData);
+        recuseUpdate(updateWrapper, widthTableEntityTree, oldWidthTableData, maxwell.getData());
         service.update(updateWrapper);
     }
 
@@ -79,16 +80,16 @@ public class WidthTableUpdate {
      * 父亲数据更新 和 对儿子的影响
      * 因为有些情况需要处理旧数据，所以这里新旧都需要传过来
      *
-     * @param updateWrapper 对聚合表更新的Wrapper
-     * @param parent        父亲连接信息
-     * @param oldData       旧数据，这个旧数据可以是聚合表的所有信息
-     * @param newData       父亲新数据
+     * @param updateWrapper     对聚合表更新的Wrapper
+     * @param curNode           父亲连接信息
+     * @param widthTableOldData 旧数据，这个旧数据可以是宽表的所有信息
+     * @param curNodeNewData    当前节点新数据
      */
-    private void recuseUpdate(UpdateWrapper updateWrapper, WidthTableEntityTree parent, Map oldData, Map newData) {
-        //遍历所有父亲字段
-        for (WidthTableFieldInfo widthTableFieldInfo : parent.getWidthTableFiledList()) {
-            Object oldValue = oldData.get(widthTableFieldInfo.getWidthTableColumnName());
-            Object newValue = newData.get(widthTableFieldInfo.getSourceTableColumnName());
+    private void recuseUpdate(UpdateWrapper updateWrapper, WidthTableEntityTree curNode, Map widthTableOldData, Map curNodeNewData) {
+        //遍历所有当前节点所有字段
+        for (WidthTableFieldInfo widthTableFieldInfo : curNode.getWidthTableFiledList()) {
+            Object oldValue = widthTableOldData.get(widthTableFieldInfo.getWidthTableColumnName());
+            Object newValue = curNodeNewData.get(widthTableFieldInfo.getSourceTableColumnName());
             if (compareValue(oldValue, newValue)) {
                 continue;
             }
@@ -108,7 +109,7 @@ public class WidthTableUpdate {
                     //如果新外键不为空，则查出新数据
                     IService childService = tableNameClassContext.getService(widthTableFieldInfo.getForeignKeySourceTable());
                     QueryWrapper queryWrapper = new QueryWrapper();
-                    queryWrapper.eq(widthTableFieldInfo.getForeignKeySourceColumn(), newData.get(widthTableFieldInfo.getForeignKeySourceColumn()));
+                    queryWrapper.eq(widthTableFieldInfo.getForeignKeySourceColumn(), curNodeNewData.get(widthTableFieldInfo.getForeignKeySourceColumn()));
                     queryWrapper.last("limit 1");
                     childNewData = childService.getMap(queryWrapper);
                     if (childNewData == null) {
@@ -117,12 +118,12 @@ public class WidthTableUpdate {
                 }
 
                 //2、传递并递归更新
-                recuseUpdate(updateWrapper, parent.getChildrenMap().get(widthTableFieldInfo.getForeignKeySourceTable()), oldData, childNewData);
+                recuseUpdate(updateWrapper, curNode.getChildrenMap().get(widthTableFieldInfo.getForeignKeySourceTable()), widthTableOldData, childNewData);
             }
         }
 
         //历遍所有儿子，处理有外键的情况
-        for (WidthTableEntityTree child : parent.getChildrenList()) {
+        for (WidthTableEntityTree child : curNode.getChildrenList()) {
             for (WidthTableFieldInfo childWidthTableFieldInfo : child.getWidthTableFiledList()) {
                 if (!WidthTableFieldInfo.FOREIGN_KEY_REL_PARENT.equals(childWidthTableFieldInfo.getForeignKeyRel())) {
                     continue;
@@ -130,8 +131,8 @@ public class WidthTableUpdate {
                 //如果儿子外键关联父亲字段，更新聚合表 对应儿子部分的信息，儿子的信息查询获取条件
                 //上面已经处理父亲关联儿子的情况，这里只处理儿子关联父亲的情况
 
-                Object oldForeignKeyValue = oldData.get(childWidthTableFieldInfo.getForeignKeyWidthTableColumn());
-                Object newForeignKeyValue = newData.get(childWidthTableFieldInfo.getForeignKeySourceColumn());
+                Object oldForeignKeyValue = widthTableOldData.get(childWidthTableFieldInfo.getForeignKeyWidthTableColumn());
+                Object newForeignKeyValue = curNodeNewData.get(childWidthTableFieldInfo.getForeignKeySourceColumn());
                 if (compareValue(oldForeignKeyValue, newForeignKeyValue)) {
                     continue;
                 }
@@ -145,7 +146,7 @@ public class WidthTableUpdate {
                     //如果新外键不为空，则查出新数据
                     IService childService = tableNameClassContext.getService(child.getSourceTableName());
                     QueryWrapper queryWrapper = new QueryWrapper();
-                    queryWrapper.eq(childWidthTableFieldInfo.getSourceTableColumnName(), newData.get(childWidthTableFieldInfo.getSourceTableColumnName()));
+                    queryWrapper.eq(childWidthTableFieldInfo.getSourceTableColumnName(), curNodeNewData.get(childWidthTableFieldInfo.getSourceTableColumnName()));
                     queryWrapper.last("limit 1");
                     childNewData = childService.getMap(queryWrapper);
                     if (childNewData == null) {
@@ -153,7 +154,7 @@ public class WidthTableUpdate {
                     }
                 }
                 //2、传递并递归更新
-                recuseUpdate(updateWrapper, child, oldData, childNewData);
+                recuseUpdate(updateWrapper, child, widthTableOldData, childNewData);
             }
         }
     }
