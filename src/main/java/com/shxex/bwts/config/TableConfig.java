@@ -49,8 +49,11 @@ public class TableConfig {
     }
 
     @Bean
-    public MiddleTableUpdate middleTableUpdate(TableNameClassContext tableNameClassContext, MiddleTableContext middleTableContext) {
-        return new MiddleTableUpdate(tableNameClassContext, middleTableContext);
+    public MiddleTableUpdate middleTableUpdate(
+            TableNameClassContext tableNameClassContext,
+            MiddleTableContext middleTableContext,
+            ObjectMapper objectMapper) {
+        return new MiddleTableUpdate(tableNameClassContext, middleTableContext, objectMapper);
     }
 
 }

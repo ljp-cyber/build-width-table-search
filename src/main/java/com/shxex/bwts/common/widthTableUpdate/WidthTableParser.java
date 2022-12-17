@@ -94,6 +94,7 @@ public class WidthTableParser {
             }
             if (StringUtils.isBlank(widthTableForeignKey.foreignKeySourceTable())) {
                 //foreignKeySourceTable 为空，默认关联父亲
+                widthTableEntityTree.setWidthTableFiledForRelParent(widthTableFieldInfo);
                 WidthTableFieldInfo parentField = parent.getWidthTableFieldMap().get(widthTableForeignKey.foreignKey());
                 widthTableFieldInfo.setForeignKeyRel(WidthTableFieldInfo.FOREIGN_KEY_REL_PARENT);
                 widthTableFieldInfo.setForeignKeySourceTable(parentField.getSourceTableName());

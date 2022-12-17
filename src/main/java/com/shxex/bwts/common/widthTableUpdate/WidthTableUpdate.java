@@ -9,8 +9,10 @@ import com.shxex.bwts.common.utils.TableInfoUtil;
 import com.shxex.bwts.processKafkaData.Maxwell;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -49,8 +51,12 @@ public class WidthTableUpdate {
                 .orElse(maxwell.getData().get(widthTableEntityTree.getSourceTablePrimaryKey()));
 
         Map oldWidthTableData = new HashMap<>();
-        if (widthTableEntityTree.getParent() == null && ObjectUtils.isEmpty(maxwell.getOld())) {
-            //处理更新的是根节点的情况j，旧数据为空，说明是新增的数据，需要插入新数据
+        if (Maxwell.DELETE.equals(maxwell.getType())) {
+            service.removeById(primaryKeyValue.toString());
+            return;
+        }
+        if (Maxwell.INSERT.equals(maxwell.getType()) && widthTableEntityTree.getParent() == null) {
+            //处理更新的是根节点的情况，旧数据为空，说明是新增的数据，需要插入新数据
             Map insert = new HashMap<>();
             for (WidthTableFieldInfo widthTableFieldInfo : widthTableEntityTree.getWidthTableFiledList()) {
                 String fieldName = TableInfoUtil.getColumnFieldNameFromCache(
@@ -60,6 +66,18 @@ public class WidthTableUpdate {
                 oldWidthTableData.put(widthTableFieldInfo.getWidthTableColumnName(), maxwell.getData().get(widthTableFieldInfo.getSourceTableColumnName()));
             }
             service.save(objectMapper.convertValue(insert, service.getEntityClass()));
+            updateWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), primaryKeyValue);
+        } else if (Maxwell.INSERT.equals(maxwell.getType()) && widthTableEntityTree.getWidthTableFiledForRelParent() != null) {
+            //处理插入子表数据，而且是儿子关联父亲的情况
+            WidthTableFieldInfo widthTableFieldInfo = widthTableEntityTree.getParent().getWidthTableFieldMap().get(widthTableEntityTree.getWidthTableFiledForRelParent().getForeignKeyWidthTableColumn());
+            QueryWrapper queryWrapper = new QueryWrapper();
+            queryWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), primaryKeyValue);
+            queryWrapper.last("limit 1");
+            oldWidthTableData = service.getMap(queryWrapper);
+            if (oldWidthTableData == null) {
+                oldWidthTableData = Collections.emptyMap();
+            }
+            updateWrapper.eq(widthTableFieldInfo.getWidthTableColumnName(), primaryKeyValue);
         } else {
             //旧数据不为空，说明宽表已经存在该条数据，查出来用
             QueryWrapper queryWrapper = new QueryWrapper();
@@ -69,11 +87,13 @@ public class WidthTableUpdate {
             if (oldWidthTableData == null) {
                 oldWidthTableData = Collections.emptyMap();
             }
+            updateWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), primaryKeyValue);
         }
 
-        updateWrapper.eq(widthTableEntityTree.getWidthTableColumnForSourcePrimaryKey(), primaryKeyValue);
         recuseUpdate(updateWrapper, widthTableEntityTree, oldWidthTableData, maxwell.getData());
-        service.update(updateWrapper);
+        if (StringUtils.isNotBlank(updateWrapper.getSqlSet())) {
+            service.update(updateWrapper);
+        }
     }
 
     /**
@@ -167,6 +187,17 @@ public class WidthTableUpdate {
         if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
             //新旧数据相同不用处理
             return true;
+        }
+        if (oldValue instanceof Number || newValue instanceof Number) {
+            BigDecimal oldNumber = null;
+            BigDecimal newNumber = null;
+            try {
+                oldNumber = NumberUtils.createBigDecimal(oldValue.toString());
+                newNumber = NumberUtils.createBigDecimal(newValue.toString());
+            } catch (Exception e) {
+                return false;
+            }
+            return oldNumber.compareTo(newNumber) == 0;
         }
         return false;
     }

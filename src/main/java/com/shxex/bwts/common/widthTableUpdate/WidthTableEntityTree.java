@@ -44,6 +44,10 @@ public class WidthTableEntityTree {
     private Map<String, WidthTableFieldInfo> widthTableFieldMap;
 
     /**
+     * 关联父亲的子段
+     */
+    private WidthTableFieldInfo widthTableFiledForRelParent;
+    /**
      * 父对象
      */
     private WidthTableEntityTree parent;

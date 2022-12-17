@@ -1,14 +1,17 @@
 package com.shxex.bwts.common.middleTableUpdate;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shxex.bwts.common.TableNameClassContext;
 import com.shxex.bwts.common.utils.NameUtil;
 import com.shxex.bwts.processKafkaData.Maxwell;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -27,6 +30,7 @@ public class MiddleTableUpdate {
 
     private TableNameClassContext tableNameClassContext;
     private MiddleTableContext middleTableContext;
+    private ObjectMapper objectMapper;
 
     public void update(Maxwell maxwell) {
         Set<String> tableNameSet = middleTableContext.setByTableName(maxwell.getTable());
@@ -45,14 +49,14 @@ public class MiddleTableUpdate {
                 return;
             }
 
-            Object groupColumnValue = maxwell.getData().get(middleTableEntity.groupColumn());
-            if (groupColumnValue == null) {
+            Object groupColumnObject = maxwell.getData().get(middleTableEntity.groupColumn());
+            if (groupColumnObject == null) {
                 return;
             }
 
             IService sourceService = tableNameClassContext.getService(maxwell.getTable());
             IService middleService = tableNameClassContext.getService(middleTableEntity.middleTable());
-            String groupColumnName = groupColumnValue.toString();
+            String groupColumnValue = groupColumnObject.toString();
 
             Field[] fields = entityClass.getDeclaredFields();
             Map<String, String> aggregateQueryField = new HashMap<>();
@@ -65,36 +69,35 @@ public class MiddleTableUpdate {
             }
 
             QueryWrapper queryWrapper = new QueryWrapper();
-            queryWrapper.eq(middleTableEntity.groupColumn(), groupColumnName);
+            queryWrapper.eq(middleTableEntity.groupColumn(), groupColumnValue);
             queryWrapper.select(aggregateQueryField.keySet().toArray(new String[aggregateQueryField.keySet().size()]));
             List<Map<String, Object>> list = sourceService.listMaps(queryWrapper);
 
-            if (middleService.getById(groupColumnName) == null) {
+            if(ObjectUtils.isEmpty(list)){
+                middleService.removeById(groupColumnValue);
+                continue;
+            }
+
+            if (middleService.getById(groupColumnValue) == null) {
                 Map<String, Object> save = new HashMap<>();
                 for (String key : aggregateQueryField.keySet()) {
                     if (middleTableEntity.groupColumn().equals(key)) {
-                        save.putIfAbsent("id", groupColumnName);
+                        save.putIfAbsent("id", groupColumnValue);
                         continue;
                     }
                     save.put(NameUtil.camelName(aggregateQueryField.get(key)), aggregateColumn(list, key));
                 }
-                try {
-                    Object newInstance = middleService.getEntityClass().newInstance();
-                    BeanUtils.populate(newInstance, save);
-                    middleService.save(newInstance);
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
+                middleService.save(objectMapper.convertValue(save,middleService.getEntityClass()));
             } else {
-                UpdateChainWrapper updateChainWrapper = middleService.update();
-                updateChainWrapper.eq("id", groupColumnName);
+                UpdateWrapper updateWrapper = new UpdateWrapper();
+                updateWrapper.eq("id", groupColumnValue);
                 for (String key : aggregateQueryField.keySet()) {
                     if (middleTableEntity.groupColumn().equals(key)) {
                         continue;
                     }
-                    updateChainWrapper.set(aggregateQueryField.get(key), aggregateColumn(list, key));
+                    updateWrapper.set(aggregateQueryField.get(key), aggregateColumn(list, key));
                 }
-                updateChainWrapper.update();
+                middleService.update(updateWrapper);
             }
         }
 
